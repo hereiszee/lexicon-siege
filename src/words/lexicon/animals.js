@@ -5,7 +5,8 @@ export default [
     `lion lions lioness lionesses tiger tigers tigress leopard leopards jaguar jaguars panther panthers cougar
  cougars puma pumas lynx lynxes cheetah cheetahs bobcat bobcats wildcat wildcats ocelot ocelots bear bears
  grizzly grizzlies hyena hyenas predator predators wolverine wolverines sabertooth smilodon 
- carnivore carnivores beast beasts`, { stat: { damage: 1.15, rate: 0.9 } }),
+ carnivore carnivores beast beasts
+ cub panda`, { stat: { damage: 1.15, rate: 0.9 } }),
   C('packs', 'summon', 'nature', 'summon', 'animal dog pack', '🐺', 'Unleashes a pack onto the path',
     `wolf wolves werewolf werewolves dog dogs hound hounds puppy puppies pup pups mutt mutts cur curs
  jackal jackals coyote coyotes dingo dingoes fox foxes vixen beagle beagles terrier terriers mastiff
@@ -23,7 +24,8 @@ export default [
  nightingale nightingales hummingbird hummingbirds woodpecker woodpeckers songbird songbirds cardinal
  oriole orioles chickadee titmouse nuthatch kingfisher cuckoo cuckoos rook macaw macaws cockatoo
  toucan toucans budgie parakeet mynah grackle bunting flock flocks fledgling nestling chick chicks
- feather feathers wing wings beak nest nests birdsong aviary`),
+ feather feathers wing wings beak nest nests birdsong aviary
+ emu plume`),
   C('waterbirds', 'bolt', 'water', 'slow:0.6', 'animal bird water', '🦢', 'Strikes from the water\'s edge',
     `duck ducks goose geese gander swan swans heron herons crane cranes stork storks pelican pelicans gull
  gulls seagull seagulls albatross penguin penguins puffin puffins flamingo flamingos cormorant cormorants
@@ -42,7 +44,8 @@ export default [
  caterpillar caterpillars worm worms earthworm earthworms maggot maggots larva larvae grub grubs slug
  snail snails centipede centipedes millipede millipedes dragonfly dragonflies firefly fireflies fly flies
  housefly mayfly damselfly mantis mantises weevil weevils aphid aphids cocoon chrysalis pupa 
- earwig silverfish woodlouse scarab scarabs`),
+ earwig silverfish woodlouse scarab scarabs
+ leech`),
   C('spiders', 'bolt', 'nature', 'slow poison:0.6', 'animal spider poison', '🕷', 'Spins webs and bites',
     `spider spiders tarantula tarantulas arachnid arachnids web webs cobweb cobwebs widow recluse 
  `),
@@ -62,18 +65,21 @@ export default [
     `fish fishes trout salmon cod tuna carp bass perch minnow minnows herring sardine sardines anchovy anchovies
  mackerel catfish goldfish guppy guppies flounder halibut haddock snapper grouper tilapia sturgeon
  carps koi swordfish marlin sailfish minnow smelt shad pollock wrasse angelfish clownfish pufferfish
- blowfish lionfish stingfish shoal shoals`),
+ blowfish lionfish stingfish shoal shoals
+ fin`),
   C('sharks', 'bolt', 'water', 'crit:1.2', 'animal fish predator water', '🦈', 'Tears into foes with rows of teeth',
     `shark sharks orca orcas barracuda barracudas piranha piranhas moray morays eel eels stingray stingrays
  hammerhead mako squid squids octopus octopuses octopi kraken krakens cuttlefish
- leviathan dogfish`),
+ leviathan dogfish
+ tentacle`),
   C('whales', 'blast', 'water', 'knockback', 'animal water sea', '🐋', 'Breaches and swamps the path',
     `whale whales walrus walruses manatee manatees dolphin dolphins porpoise porpoises seal seals 
  narwhal narwhals beluga belugas humpback humpbacks dugong otter otters`),
   C('shellfish', 'support', 'water', 'shield', 'animal water shell', '🦀', 'Lends nearby towers a hard shell',
     `crab crabs lobster lobsters shrimp prawn prawns clam clams oyster oysters mussel mussels scallop scallops
- barnacle barnacles seashell seashells shell conch conches cockle cockles crayfish crawfish hermit limpet
- limpets nautilus armadillo armadillos pangolin pangolins`),
+ barnacle barnacles seashell seashells shell conch conches cockle cockles crayfish crawfish  limpet
+ limpets nautilus armadillo armadillos pangolin pangolins
+ `),
   C('jellies', 'aura', 'water', 'stun', 'animal water poison', '🪼', 'Stings everything that drifts close',
     `jellyfish anemone anemones coral corals urchin urchins starfish polyp polyps sponge sponges
  `),
@@ -86,7 +92,8 @@ export default [
  charger chargers warhorse warhorses donkey donkeys mule mules zebra zebras camel camels llama llamas
  alpaca alpacas burro burros bronco broncos thoroughbred palomino pinto filly fillies gelding geldings
  cavalry horseman horsemen rider riders cowboy cowboys cowgirl jockey stable stables saddle saddles
- stirrup stirrups bridle reins horseshoe centaur centaurs pegasus unicorn`),
+ stirrup stirrups bridle reins horseshoe centaur centaurs pegasus unicorn
+ `),
   C('deer', 'rapid', 'nature', 'knockback:0.5', 'animal prey', '🦌', 'Bounds about, butting foes',
     `deer stag stags doe fawn fawns antelope antelopes gazelle gazelles impala impalas reindeer caribou
  hare hares rabbit rabbits bunny bunnies kangaroo kangaroos wallaby wallabies jackrabbit hart hind roe
@@ -99,13 +106,15 @@ export default [
   C('skunk', 'aura', 'nature', 'poison slow:0.5', 'animal poison', '🦨', 'Fouls the air around it',
     `skunk skunks polecat polecats stinkbug stinkhorn`),
   C('bats', 'chain', 'shadow', 'reveal', 'animal night', '🦇', 'Sends bats flitting foe to foe',
-    `bat bats batwing echolocation `),
+    `bat bats batwing echolocation
+ `),
   C('primates', 'rapid', 'nature', 'stun:0.4', 'animal primate', '🐒', 'Flings fruit and fury',
     `monkey monkeys ape apes gorilla gorillas chimp chimps chimpanzee chimpanzees baboon baboons orangutan
  orangutans gibbon gibbons lemur lemurs primate primates macaque mandrill marmoset bonobo`),
   C('cats', 'rapid', 'nature', 'crit', 'animal cat', '🐈', 'Swipes at foes with quick claws',
     `cat cats kitten kittens kitty kitties tomcat tomcats feline felines tabby tabbies moggy siamese persian
- mouser `),
+ mouser
+ paw`),
   C('livestock', 'harvest', 'nature', 'harvest.ink', 'animal farm livestock', '🐄', 'Raises livestock for ink',
     `cow cows cattle calf calves pig pigs hog hogs sow sows piglet piglets sheep lamb lambs ewe ewes chicken
  chickens hen hens rooster roosters cockerel chick turkey turkeys livestock poultry herd herds herder

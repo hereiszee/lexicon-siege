@@ -316,6 +316,27 @@ test('heal repairs towers in range in pulses', () => {
   assert.ok(Math.abs(t.hp - 60) < 1e-9, String(t.hp)); // 10 hps × 1 s, in 0.5 s pulses
 });
 
+test('passive effects from support augments work on an attacking tower', () => {
+  const aug = (effects) => ({ archetype: 'support', augment: { kind: 'verb', cost: 10, mods: {}, effects } });
+  const { game, place, augment, enemy } = sandbox({
+    cannon: { archetype: 'blast', stats: { damage: 10, rate: 1, range: 2, splash: 1 } },
+    cat: { stats: { damage: 5, hp: 100 } },
+    heal: aug([{ type: 'heal', hps: 10 }]),
+    rally: aug([{ type: 'buff', stat: 'damage', mul: 1.5 }]),
+    guard: aug([{ type: 'shield', amount: 20, interval: 5 }]),
+  });
+  const c = place('cannon', 5, 3);
+  const t = place('cat', 6, 3);
+  for (const w of ['heal', 'rally', 'guard']) augment(w, c);
+  assert.equal(t.stats.damage, 7.5, 'buff from the augmented cannon reaches its neighbour');
+  t.hp = 50;
+  enemy('grunt', 4, { hpMul: 100 });
+  game.update(1);
+  assert.ok(t.hp >= 60 - 1e-9, `neighbour healed (hp ${t.hp})`);
+  assert.equal(t.shield, 20, 'neighbour shielded');
+  assert.ok(c.damageDealt > 0, 'the cannon still fires');
+});
+
 test('harvest ink and tile', () => {
   const { game, place, enemy } = sandbox({
     ax: { archetype: 'harvest', stats: { damage: 0 }, effects: [{ type: 'harvest', resource: 'ink', amount: 4, interval: 5 }] },

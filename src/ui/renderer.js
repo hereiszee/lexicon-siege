@@ -8,13 +8,15 @@ import {
 import { rgba, mixHex } from './dom.js';
 
 const TAU = Math.PI * 2;
+/** Tower letters are ~1.5 cells tall; lift them so the word label sits across their lower part. */
+const LETTER_UP = 0.12;
 
 /* ------------------------------------------------------------------- biomes */
 export const BIOMES = {
-  paper:    { ground: '#eee8df', path: 'rgba(255,255,255,0.6)', minor: 'rgba(80,80,90,0.30)', major: 'rgba(214,150,80,0.42)', kinds: ['rock', 'water', 'rock', 'water', 'slab'] },
-  sage:     { ground: '#b9d3a0', path: 'rgba(236,242,206,0.62)', minor: 'rgba(55,85,45,0.32)', major: 'rgba(205,150,90,0.40)', kinds: ['tree', 'tree', 'tree', 'rock'] },
-  white:    { ground: '#f4f4f3', path: 'rgba(196,186,166,0.36)', minor: 'rgba(100,100,110,0.28)', major: 'rgba(205,160,110,0.30)', kinds: ['slab', 'slab', 'slab', 'slab', 'rock'] },
-  lavender: { ground: '#dcd5ea', path: 'rgba(250,248,255,0.62)', minor: 'rgba(85,75,115,0.30)', major: 'rgba(205,140,120,0.32)', kinds: ['rock', 'slab', 'water'] },
+  paper:    { ground: '#eee8df', path: 'rgba(255,255,255,0.24)', minor: 'rgba(80,80,90,0.30)', major: 'rgba(214,150,80,0.42)', kinds: ['rock', 'water', 'rock', 'water', 'slab'] },
+  sage:     { ground: '#b9d3a0', path: 'rgba(236,242,206,0.26)', minor: 'rgba(55,85,45,0.32)', major: 'rgba(205,150,90,0.40)', kinds: ['tree', 'tree', 'tree', 'rock'] },
+  white:    { ground: '#f4f4f3', path: 'rgba(196,186,166,0.13)', minor: 'rgba(100,100,110,0.28)', major: 'rgba(205,160,110,0.30)', kinds: ['slab', 'slab', 'slab', 'slab', 'rock'] },
+  lavender: { ground: '#dcd5ea', path: 'rgba(250,248,255,0.24)', minor: 'rgba(85,75,115,0.30)', major: 'rgba(205,140,120,0.32)', kinds: ['rock', 'slab', 'water'] },
 };
 export function biomeFor(element) {
   switch (element) {
@@ -67,7 +69,7 @@ export function createRenderer(canvas) {
 
   function layout() {
     // keep a little air at the top so row-0 letters (which rise above their cell) aren't cut off
-    S = Math.max(8, Math.min(W / cols, (H - 26) / rows));
+    S = Math.max(8, Math.min(W / cols, (H - 50) / rows));
     OX = Math.round((W - cols * S) / 2);
     OY = Math.round((H - rows * S) / 2);
     buildStatic();
@@ -398,8 +400,8 @@ export function createRenderer(canvas) {
     g.save();
     g.translate(X(x0 + 0.5), Y(y0 + 0.5));
     g.rotate(ang);
-    g.strokeStyle = 'rgba(30,30,30,0.35)';
-    g.lineWidth = Math.max(2, S * 0.05);
+    g.strokeStyle = 'rgba(30,30,30,0.55)';
+    g.lineWidth = Math.max(2.5, S * 0.065);
     g.lineCap = 'round'; g.lineJoin = 'round';
     for (let i = 0; i < 2; i++) {
       const ox = -S * 0.12 + i * S * 0.2;
@@ -504,7 +506,7 @@ export function createRenderer(canvas) {
         ctx.lineWidth = hot ? 3 : 1.5;
         ctx.setLineDash(hot ? [] : [5, 4]);
         ctx.lineDashOffset = -t * 14;
-        ctx.beginPath(); ctx.arc(X(tw.x), Y(tw.y), S * 0.58, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.arc(X(tw.x), Y(tw.y) - LETTER_UP * S, S * 0.8, 0, TAU); ctx.stroke();
         ctx.restore();
       }
     }
@@ -516,15 +518,15 @@ export function createRenderer(canvas) {
       ctx.save();
       ctx.globalAlpha = gh.ok ? 0.7 : 0.45;
       const spr = letterSprite(gh.spec.word[0], gh.ok ? (gh.spec.color || elementColor(gh.spec.element)) : '#d0402b', S, dpr);
-      ctx.drawImage(spr.canvas, X(gh.cx + 0.5) - spr.css / 2, Y(gh.cy + 0.5) - spr.css / 2 - S * 0.08, spr.css, spr.css);
+      ctx.drawImage(spr.canvas, X(gh.cx + 0.5) - spr.css / 2, Y(gh.cy + 0.5) - spr.css / 2 - LETTER_UP * S, spr.css, spr.css);
       ctx.restore();
     }
 
     // Summoned defenders: white pawns.
     for (const u of state.units || []) {
       const px = X(u.x), py = Y(u.y) + S * 0.14;
-      drawPiece(ctx, 'pawn', px, py, S * 0.3, { color: '#ffffff', haloColor: 'rgba(20,20,20,0.85)' });
-      if (u.maxHp > 0 && u.hp < u.maxHp) hpBar(px, py - S * 0.36, S * 0.3, u.hp / u.maxHp, false);
+      drawPiece(ctx, 'pawn', px, py, S * 0.45, { color: '#ffffff', haloColor: 'rgba(20,20,20,0.85)' });
+      if (u.maxHp > 0 && u.hp < u.maxHp) hpBar(px, py - S * 0.52, S * 0.3, u.hp / u.maxHp, false);
     }
 
     // Enemies: black chess pieces in loose crowds.
@@ -611,7 +613,7 @@ export function createRenderer(canvas) {
         ctx.font = `700 ${Math.max(11, S * 0.19)}px ${SANS}`;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const w = ctx.measureText(label).width + 18, h = Math.max(20, S * 0.32);
-        const lx = X(tw.x), ly = Y(tw.y) - S * 0.85;
+        const lx = X(tw.x), ly = Y(tw.y) - S * 1.15;
         ctx.fillStyle = gh.ok ? '#f59a1b' : '#d0402b';
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(lx - w / 2, ly - h / 2, w, h, h / 2); else ctx.rect(lx - w / 2, ly - h / 2, w, h);
@@ -657,22 +659,24 @@ export function createRenderer(canvas) {
     const size = spr.css * sc;
     ctx.save();
     if (tw.disabled) ctx.globalAlpha = 0.6;
-    ctx.drawImage(spr.canvas, X(tw.x) - size / 2, Y(tw.y) - size / 2 - S * 0.08 + lift, size, size);
+    ctx.drawImage(spr.canvas, X(tw.x) - size / 2, Y(tw.y) - size / 2 - LETTER_UP * S + lift, size, size);
     ctx.restore();
     tw.__lw = spr.letterW;
+    tw.__asc = spr.asc;
   }
 
   function drawTowerLabel(tw) {
     const px = X(tw.x), py = Y(tw.y);
-    const lw = tw.__lw || S * 0.7;
-    drawAsterisk(ctx, px + lw / 2 + S * 0.04, py - S * 0.46, Math.max(3, S * 0.065), tw.disabled ? '#777' : '#111');
+    const lw = tw.__lw || S * 1.5;
+    const top = py - LETTER_UP * S - (tw.__asc || S * 1.45) / 2;
+    drawAsterisk(ctx, px + lw / 2 + S * 0.06, top + S * 0.04, Math.max(3.5, S * 0.09), tw.disabled ? '#777' : '#111');
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    let fs = Math.max(9, S * 0.19);
+    let fs = Math.max(10, S * 0.23);
     ctx.font = `700 ${fs}px ${SANS}`;
     const word = tw.word.toUpperCase();
-    const maxW = S * 1.5;
+    const maxW = S * 1.9;
     const w = ctx.measureText(word).width;
     if (w > maxW) { fs = Math.max(7, fs * maxW / w); ctx.font = `700 ${fs}px ${SANS}`; }
     const by = py + S * 0.3;
@@ -685,13 +689,13 @@ export function createRenderer(canvas) {
     // augment words stack ABOVE the base word as tiny grey caps
     const augs = tw.augments || [];
     if (augs.length) {
-      const afs = Math.max(7, S * 0.12);
+      const afs = Math.max(8, S * 0.14);
       ctx.font = `600 ${afs}px ${SANS}`;
       for (let i = 0; i < augs.length; i++) {
         const txt = String(augs[augs.length - 1 - i].word || '').toUpperCase();
         const y = by - fs * 0.95 - i * afs * 1.02;
         ctx.strokeText(txt, px, y);
-        ctx.fillStyle = '#6f7177';
+        ctx.fillStyle = '#5c5f66';
         ctx.fillText(txt, px, y);
       }
     }
@@ -700,7 +704,7 @@ export function createRenderer(canvas) {
     if (tw.shield > 0) {
       ctx.strokeStyle = 'rgba(90,169,214,0.75)';
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(px, py, S * 0.55, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px, py - LETTER_UP * S, S * 0.8, 0, TAU); ctx.stroke();
     }
   }
 

@@ -130,10 +130,12 @@ canvas.board { position: absolute; left: 0; top: 0; display: block; }
 .wave-btn { min-width: 128px; }
 
 .side-card { position: absolute; right: 12px; top: 54px; width: 300px; max-height: calc(100% - 66px); overflow: auto; border-radius: 6px; }
+/* keep the tower card clear of the composed word floating at the bottom of the board */
+.composing .side-card { max-height: calc(100% - 240px); }
 
 .compose {
-  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none; max-width: calc(100% - 24px);
+  position: absolute; left: 12px; right: 12px; bottom: 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 9px; pointer-events: none;
 }
 .compose > * { pointer-events: auto; }
 .compose-tiles { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; }
@@ -184,9 +186,9 @@ canvas.board { position: absolute; left: 0; top: 0; display: block; }
 .rack-btns { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; flex-wrap: nowrap; overflow: hidden; }
 .rack { display: flex; gap: 6px; justify-content: center; min-height: var(--tile-size); }
 .rack-hint { text-align: center; margin-top: 10px; font-size: 11.5px; color: var(--muted); }
-.dmg-list { margin: 0; padding: 0; list-style: none; font-size: 11px; overflow: hidden; max-height: 112px; }
+.dmg-list { margin: 0; padding: 0; list-style: none; font-size: 11px; overflow: hidden; max-height: 96px; }
 .dmg-list li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; line-height: 16px; }
-.dmg-list li .n { font: 700 13px var(--cond); color: var(--ink); display: inline-block; min-width: 44px; text-align: right; margin-right: 4px; }
+.dmg-list li .n { font: 700 13px/16px var(--cond); vertical-align: top; color: var(--ink); display: inline-block; min-width: 44px; text-align: right; margin-right: 4px; }
 .dmg-list li .w { font-weight: 700; letter-spacing: .03em; filter: saturate(.9) brightness(.8); }
 .dmg-list li.sel { background: rgba(255,255,255,.7); }
 .dmg-list li.empty { color: var(--muted); cursor: default; white-space: normal; }

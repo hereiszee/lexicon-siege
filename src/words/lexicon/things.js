@@ -17,12 +17,14 @@ export default [
  ferries barge barges schooner schooners sloop sloops ketch clipper clippers dinghy dinghies gondola
  gondolas longship longships galley trireme junk catamaran steamboat steamship tugboat
  lifeboat rowboat sailboat speedboat hovercraft ark carrier flagship vessel vessels sail sails mast
- masts hull hulls keel rudder anchorage`),
+ masts hull hulls keel rudder anchorage
+ oar`),
   C('aircraft', 'snipe', 'storm', 'splash:0.4 crit:0.5', 'vehicle sky', '✈', 'Strafes distant foes from the air',
     `plane planes airplane airplanes aeroplane aeroplanes jet jets helicopter helicopters airship airships
  blimp blimps zeppelin zeppelins glider gliders biplane biplanes airliner bomber
  seaplane parachute parachutes paraglider hangglider airport airports runway aviator
- aviators pilot pilots copilot airman airmen aviation`),
+ aviators pilot pilots copilot airman airmen aviation
+ `),
   C('trains', 'beam', 'metal', 'knockback:0.5', 'vehicle machine', '🚂', 'Barrels a relentless train through foes',
     `train trains locomotive locomotives tram trams subway subways streetcar trolley monorail 
  boxcar caboose engineer conductor freight express `),
@@ -57,7 +59,8 @@ export default [
     `pen pens pencil pencils quill quills inkwell inkwells nib nibs crayon crayons marker markers stylus chalk
  typewriter typewriters press presses printer printers printing paper papers parchment papyrus page pages
  sheet sheets notepad eraser erasers ruler sharpener inkpot penmanship calligraphy handwriting
- signature signatures autograph autographs scribble scribbles doodle doodles sketch sketches`),
+ signature signatures autograph autographs scribble scribbles doodle doodles sketch sketches
+ `),
   C('scribes', 'harvest', 'arcane', 'harvest.tile:1.2', 'writing person scholar', '📜', 'Copies out fresh letters',
     `scribe scribes writer writers author authors novelist novelists editor editors clerk clerks secretary
  secretaries typist typists scrivener scriveners copyist copyists calligrapher calligraphers stenographer
@@ -70,18 +73,21 @@ export default [
  consonant consonants syllable syllables phrase phrases sentence sentences paragraph paragraphs
  grammar language languages tongue dialect dialects slang idiom idioms noun nouns verb verbs adjective
  adjectives adverb adverbs pronoun pronouns anagram anagrams palindrome acronym acronyms abbreviation
- rhyme rhymes pun puns morpheme etymology wordplay text texts`),
+ rhyme rhymes pun puns morpheme etymology wordplay text texts
+ hieroglyph`),
   C('ink', 'harvest', 'shadow', 'harvest.ink:1.15', 'writing ink', '🖋', 'Wells up fresh ink',
     `ink inks inkhorn inkstone inky indigo sepia`, { mass: true }),
   C('messages', 'support', 'storm', 'buff.range', 'message writing', '✉', 'Relays orders so nearby towers reach farther',
     `message messages messenger messengers courier couriers herald postman postmen mailman mailmen mail post
  postcard postcards envelope envelopes telegram telegrams telegraph signal signals beacon semaphore
  newspaper newspapers news bulletin bulletins broadcast broadcasts announcement notice
- notices memo memos note notes dispatch dispatches missive epistle correspondence herald`),
+ notices memo memos note notes dispatch dispatches missive epistle correspondence herald
+ `),
   // ---------------------------------------------------------------- poison & disease
   C('poison', 'bolt', 'nature', 'poison:1.3', 'poison', '☠', 'Fires darts dripping with poison',
     `poison poisons venom venoms toxin toxins arsenic cyanide hemlock nightshade belladonna strychnine
- ricin curare wolfsbane aconite toxicant bane hemlocks foxglove oleander`),
+ ricin curare wolfsbane aconite toxicant bane hemlocks foxglove oleander
+ `),
   C('disease', 'aura', 'shadow', 'poison', 'disease poison dark', '🦠', 'Spreads sickness among nearby foes',
     `plague plagues disease diseases pestilence pestilences sickness sicknesses illness illnesses fever fevers
  infection infections virus viruses bacteria bacterium germ germs flu influenza cholera typhoid typhus
@@ -99,13 +105,15 @@ export default [
   C('traps', 'aura', 'metal', 'stun slow:0.7', 'trap', '🪤', 'Snaps shut on foes that wander close',
     `trap traps snare snares net nets mesh tripwire tripwires pitfall pitfalls caltrop caltrops beartrap
  mousetrap mousetraps deadfall booby boobytrap gin snag snags hook hooks lure decoy decoys bait spring
- springtrap trapdoor trapdoors minefield`, { stat: { range: 0.85 } }),
+ springtrap trapdoor trapdoors minefield
+ pit maze labyrinth`, { stat: { range: 0.85 } }),
   C('sticky', 'aura', 'nature', 'slow:1.5', 'trap sticky', '🍯', 'Gums up nearby foes',
     `glue glues tar resin resins sap gum gums paste pastes adhesive adhesives goo gunk molasses mucilage
  birdlime flypaper syrupy quagmire morass`),
   C('chains', 'bolt', 'metal', 'slow:1.1 stun:0.3', 'trap metal bind', '⛓', 'Binds foes in chains',
     `chain chains shackle shackles manacle manacles fetter fetters bond bonds handcuff handcuffs cuff cuffs
- bind binding bindings restraint restraints straitjacket gag yoke yokes collar collars `),
+ bind binding bindings restraint restraints straitjacket gag yoke yokes collar collars
+ `),
   C('spikes', 'aura', 'metal', 'armorBreak', 'trap metal', '📍', 'Bristles with spikes that shred nearby foes',
     `spikes stake impalement barbwire bristle bristles pin pins tack
  tacks thumbtack nail spur spurs prickle`),
@@ -122,13 +130,14 @@ export default [
  serenade serenades carol carols chant chants overture orchestra orchestras band bands composer
  composers conductor maestro singer orchestration musical harmony harmonies chord chords note
  opera anthem lyric lyrics jingle jingles jazz blues reggae funk disco rap techno swing
- tango waltz polka rumba samba foxtrot minuet jig gospel folksong`),
+ tango waltz polka rumba samba foxtrot minuet jig gospel folksong
+ nocturne finale crescendo`),
   // ---------------------------------------------------------------- misc everyday
   C('art', 'support', 'arcane', 'buff.range:0.85', 'art', '🎨', 'Paints a vision that extends nearby towers\' range',
     `art arts painting paintings painter painters artist artists sculptor sculptors sculpture sculptures
  statue statues portrait portraits canvas easel palette mural murals fresco frescoes masterpiece
  masterpieces drawing drawings illustration photograph photographs photo photos camera cameras
- photographer gallery galleries mosaic tapestry`),
+ photographer gallery galleries mosaic tapestry paint`),
   C('weather-misc', 'aura', 'storm', 'slow:0.5 stun:0.4', 'weather', '🌫', 'Brews foul weather around itself',
     `weather climate forecast barometer thermometer windchill isobar humidity`),
 ];

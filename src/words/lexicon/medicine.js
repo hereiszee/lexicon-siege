@@ -9,7 +9,8 @@ export default [
  neurologist oncologist psychiatrist psychologist counselor counsellor caregiver caregivers caretaker
  nursemaid sawbones physio physiotherapist chiropractor osteopath orthopedist obstetrician surgery
  intern internist corpsman healthcare medicare medicaid matron sister orderly orderlies
- chemist druggist dresser bonesetter infirmarian`),
+ chemist druggist dresser bonesetter infirmarian
+ nanny`),
   C('remedies', 'support', 'water', 'heal', 'medical remedy heal', '💊', 'Doses nearby towers with remedies',
     `medicine medicines medication medications medicament remedy remedies cure cures tonic tonics salve salves
  balm balms ointment ointments bandage bandages gauze plaster plasters splint splints stitch stitches suture

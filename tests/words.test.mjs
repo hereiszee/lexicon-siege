@@ -255,3 +255,25 @@ test('morphology helpers', () => {
   assert.ok(verbForms('heal').includes('healed'));
   assert.ok(LEXICON.has('doctor') && !LEXICON.has('doctors'));
 });
+
+test('word meanings: audited everyday words feel like their word', () => {
+  const m = (w) => { const s = towerFor(w); return `${s.archetype}/${s.element}`; };
+  assert.equal(m('ash'), 'aura/fire');
+  assert.equal(m('freezer'), 'aura/ice');
+  assert.equal(m('bed'), 'support/earth');
+  assert.equal(m('chili'), 'bolt/fire');
+  assert.ok(posOf('jelly').includes('noun'));
+});
+
+// Same-kind words listed in two concepts: the first concept silently wins. All current ones were
+// reviewed (winner = the more natural meaning); a new one must be reviewed before raising this cap.
+test('concept collisions do not grow unreviewed', () => {
+  const seen = new Map();
+  let n = 0;
+  for (const c of CONCEPTS) for (const w of new Set(c.words)) {
+    const first = seen.get(w);
+    if (!first) seen.set(w, c);
+    else if (first !== c && !!first.kind === !!c.kind) n++;
+  }
+  assert.ok(n <= 360, `${n} concept collisions (cap 360): review the new ones`);
+});

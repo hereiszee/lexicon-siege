@@ -61,3 +61,23 @@ test('bot plays levels 1–10 with real modules', { skip }, () => {
   }
   console.log('# ' + rows.join('\n# '));
 });
+
+test('difficulty curve: tutorial is easy for a casual bot, level 1000 is not', { skip }, () => {
+  const { words, levels, dictionary } = mods;
+  const finder = makeWordFinder(dictionary);
+  const play = (n, skill, s) => {
+    const level = levels.levelFor(n);
+    const r = playLevel({
+      level, dictionary, towerFor: words.towerFor, checkWordRules: levels.checkWordRules,
+      themeBonus: levels.themeBonus, seed: level.seed + s * 7919, skill, finder,
+    });
+    return { ...r, frac: r.livesLeft / level.lives };
+  };
+  for (const n of [1, 2, 3]) {
+    for (const s of [0, 1]) {
+      const r = play(n, 0.15, s);
+      assert.ok(r.won && r.frac >= 0.9, `level ${n} seed ${s}: casual should win comfortably (won ${r.won}, lives ${r.frac})`);
+    }
+  }
+  for (const s of [0, 1]) assert.ok(!play(1000, 0.15, s).won, `level 1000 seed ${s} won by a casual bot`);
+});

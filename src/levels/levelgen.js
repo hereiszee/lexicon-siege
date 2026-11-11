@@ -53,8 +53,9 @@ export function makeLevel(word, difficulty, towerFor, meta = {}) {
   const bonus = makeBonus(spec, spec.element, d);
   const rules = generateRules(sub('rules'), d, { word: w, bonusElement: bonus.element, waveCount: waves.length });
 
-  const lives = DEFAULTS.lives + 5 * Math.floor((d - 1) / 250);
-  const startInk = DEFAULTS.startInk + Math.round(d / 10) + (boss ? 10 : 0);
+  const lives = DEFAULTS.lives + Math.floor(d / 70); // +1 every 70 levels (smooth, no 250-level steps)
+  // late waves are tough from the start: the opening ink grows with difficulty (100 → 500)
+  const startInk = DEFAULTS.startInk + Math.round(d * 0.4) + (boss ? 10 : 0);
 
   return {
     id: meta.id ?? 0,

@@ -8,13 +8,15 @@ export default [
  watermelons cantaloupe mango mangoes pineapple pineapples papaya papayas kiwi kiwis fig figs date dates
  apricot apricots coconut coconuts avocado avocados pomegranate pomegranates nectarine tangerine
  tangerines clementine grapefruit guava lychee persimmon quince raisin raisins prune prunes currant
- currants olive olives elderberry mulberry`),
+ currants olive olives elderberry mulberry
+ `),
   C('vegetables', 'harvest', 'nature', 'harvest.ink:0.95', 'food vegetable farm', '🥕', 'Grows vegetables to sell for ink',
     `vegetable vegetables veggie veggies carrot carrots potato potatoes tomato tomatoes onion onions garlic
  cabbage cabbages lettuce pea peas bean beans turnip turnips radish radishes beet beets beetroot spinach
  celery broccoli cauliflower cucumber cucumbers pumpkin pumpkins squash zucchini eggplant aubergine leek
  leeks yam yams parsnip parsnips artichoke asparagus kale okra lentil lentils chickpea chickpeas soybean
- soybeans sprouts gourd gourds marrow rhubarb shallot scallion chive chives`),
+ soybeans sprouts gourd gourds marrow rhubarb shallot scallion chive chives
+ pickle`),
   C('bread', 'harvest', 'earth', 'harvest.ink', 'food bread', '🍞', 'Bakes bread and sells it for ink',
     `bread breads loaf loaves bun buns roll rolls cake cakes pie pies pastry pastries biscuit biscuits cookie
  cookies muffin muffins bagel bagels croissant croissants pretzel pretzels toast pancake pancakes waffle
@@ -25,10 +27,11 @@ export default [
     `meat meats steak steaks beef pork bacon ham hams sausage sausages stew stews soup soups broth broths feast
  feasts meal meals dinner dinners supper suppers lunch lunches breakfast breakfasts banquet banquets roast
  roasts burger burgers hamburger sandwich sandwiches pizza pizzas pasta noodle noodles spaghetti lasagna
- macaroni ravioli dumpling dumplings curry curries chowder gumbo chili omelet omelette egg eggs cheese
+ macaroni ravioli dumpling dumplings  curries chowder gumbo  omelet omelette egg eggs cheese
  cheeses butter yogurt yoghurt sushi taco tacos burrito burritos casserole pot roast kebab kebabs
  meatball meatballs hotdog picnic picnics brunch snack snacks food foods ration rations provisions
- grub chow fare cuisine recipe recipes`),
+ grub chow fare cuisine recipe recipes
+ sauce`),
   C('sweets', 'support', 'light', 'buff.rate', 'food sweet', '🍬', 'Hands out sweets that hurry nearby towers',
     `candy candies sugar sugars honey honeycomb chocolate chocolates caramel caramels toffee fudge syrup jam
  jams jelly jellies cream creams icecream dessert desserts sweet sweets treat treats lollipop lollipops
@@ -38,7 +41,8 @@ export default [
   C('spicy', 'bolt', 'fire', 'burn:1.1', 'food spicy fire', '🌶', 'Spits fiery peppers',
     `pepper peppers chili chilies chilli chillies jalapeno jalapenos habanero habaneros paprika cayenne mustard
  wasabi horseradish ginger spice spices salsa tabasco sriracha pepperoni peppercorn peppercorns
- cinnamon clove cloves nutmeg cumin turmeric saffron`),
+ cinnamon clove cloves nutmeg cumin turmeric saffron
+ curry`),
   C('herbs', 'support', 'nature', 'heal:0.85', 'food herb plant', '🌿', 'Brews herbs that soothe nearby towers',
     `basil thyme rosemary parsley oregano mint peppermint spearmint sage dill coriander cilantro chamomile
  camomile tarragon fennel anise lemongrass verbena aloe ginseng echinacea valerian `),
@@ -46,7 +50,8 @@ export default [
     `tea teas coffee coffees milk milks juice juices soda sodas wine wines ale ales beer beers mead cider ciders
  brandy whiskey whisky rum vodka gin cocoa lemonade milkshake smoothie espresso latte cappuccino
  champagne sake liqueur grog punch cocktail cocktails beverage beverages drink drinks potable broth
- teapot teacup`),
+ teapot teacup
+ `),
   C('salt', 'bolt', 'earth', 'slow:0.5', 'food mineral', '🧂', 'Flings stinging salt',
-    `vinegar brine pickle pickles sauce sauces ketchup gravy dressing seasoning condiment condiments relish`),
+    `vinegar brine  pickles  sauces ketchup gravy dressing seasoning condiment condiments relish`),
 ];

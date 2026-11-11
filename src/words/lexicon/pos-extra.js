@@ -10,7 +10,7 @@ export const POS_EXTRA = {
  lasso harness belt tether leash brush mop sweep scrub sponge polish bleach wash towel vacuum dust
  shelter shield armor guard knife spear lance pike harpoon skewer bow arrow gun shoot rifle
  shell bomb blast mortar rocket torpedo club cane bat stick sling whip lash flog scourge mail helm
- battle fight war brawl skirmish clash assault crusade raid invade campaign blitz rampage storm
+ divine battle fight war brawl skirmish clash assault crusade raid invade campaign blitz rampage storm
  doctor nurse medic treat dose bandage plaster splint stitch suture salve dress cure remedy heal
  fire flame blaze spark flare torch brand burn heat smoke fume steam scald sweat boil bake roast
  ice frost snow hail sleet chill cold freeze thunder shock zap jolt arc spark charge current power

@@ -92,12 +92,12 @@ export function titleScreen(root, { onPlay, onLevels, onDictionary, status, cont
       drawPiece(g, kind, x, y + Math.abs(Math.sin(t * 6 + i)) * -2, S * (kind === 'pawn' ? 0.3 : 0.38), { flip: true });
     }
     for (let i = 0; i < word.length; i++) {
-      const spr = letterSprite(word[i], colors[i], S, dpr);
+      const spr = letterSprite(word[i], colors[i], S * 0.45, dpr); // sprite letters are ~1.5 cells tall
       const bob = Math.sin(t * 1.4 + i * 0.6) * S * 0.03;
       g.drawImage(spr.canvas, x0 + i * S - spr.css / 2, cy - spr.css / 2 + bob, spr.css, spr.css);
     }
-    const last = letterSprite(word[word.length - 1], colors[word.length - 1], S, dpr);
-    drawAsterisk(g, x0 + (word.length - 1) * S + last.letterW / 2 + S * 0.06, cy - S * 0.44, S * 0.08);
+    const last = letterSprite(word[word.length - 1], colors[word.length - 1], S * 0.45, dpr);
+    drawAsterisk(g, x0 + (word.length - 1) * S + last.letterW / 2 + S * 0.06, cy - last.asc / 2 - S * 0.02, S * 0.08);
     g.font = `700 ${Math.max(16, S * 0.34)}px ${SANS}`;
     g.textAlign = 'center';
     g.fillStyle = '#111';

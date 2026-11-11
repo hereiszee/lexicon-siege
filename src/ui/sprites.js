@@ -32,11 +32,11 @@ export function letterSprite(letter, color, S, dpr, disabled = false) {
   if (s) return s;
   if (letterCache.size > 300) letterCache.clear();
 
-  const css = S * 2.4;
+  const css = S * 4;
   const W = Math.ceil(css * dpr);
   const face = disabled ? '#b9bcc2' : color;
   const side = mixHex(face, '#000000', 0.38);
-  const fs = S * 0.92;
+  const fs = S * 2.05; // cap height ≈ 1.5 cells, as in the mockups
   const font = `900 ${fs}px ${HEAVY}`;
 
   const make = () => { const c = document.createElement('canvas'); c.width = c.height = W; const g = c.getContext('2d'); g.scale(dpr, dpr); return [c, g]; };
@@ -55,14 +55,14 @@ export function letterSprite(letter, color, S, dpr, disabled = false) {
   const [sh, sg] = make();
   sg.font = font; sg.textAlign = 'center'; sg.textBaseline = 'alphabetic';
   sg.fillStyle = '#000';
-  const len = S * 0.5, step = 0.75 / dpr;
+  const len = S * 0.75, step = 0.75 / dpr;
   for (let k = 0; k <= len; k += step) sg.fillText(L, cx + SHADOW_DIR.x * k, by + SHADOW_DIR.y * k);
   o.globalAlpha = 0.17;
   o.drawImage(sh, 0, 0, css, css);
   o.globalAlpha = 1;
 
   // Extrusion toward the lower-left.
-  const depth = S * 0.1;
+  const depth = S * 0.17;
   o.fillStyle = side;
   for (let k = depth; k > 0; k -= step) o.fillText(L, cx - k * 0.85, by + k * 0.85);
 
@@ -77,9 +77,9 @@ export function letterSprite(letter, color, S, dpr, disabled = false) {
   grad.addColorStop(1, 'rgba(0,0,0,0.06)');
   fg.fillStyle = grad;
   fg.fillRect(0, 0, css, css);
-  const brick = S * 0.13;
+  const brick = S * 0.2;
   fg.strokeStyle = 'rgba(0,0,0,0.10)';
-  fg.lineWidth = Math.max(0.6, S * 0.012);
+  fg.lineWidth = Math.max(0.6, S * 0.016);
   const rnd = mulberry32(hashString(L + color));
   for (let row = 0, y = cy - asc; y < cy + asc; row++, y += brick) {
     fg.beginPath(); fg.moveTo(0, y); fg.lineTo(css, y); fg.stroke();
@@ -88,7 +88,7 @@ export function letterSprite(letter, color, S, dpr, disabled = false) {
     }
   }
   fg.fillStyle = 'rgba(255,255,255,0.18)';
-  for (let i = 0; i < 40; i++) fg.fillRect(cx - S * 0.5 + rnd() * S, cy - asc / 2 - S * 0.1 + rnd() * asc * 1.2, S * 0.025, S * 0.025);
+  for (let i = 0; i < 60; i++) fg.fillRect(cx - lw / 2 + rnd() * lw, cy - asc / 2 + rnd() * asc, S * 0.035, S * 0.035);
   o.drawImage(fc, 0, 0, css, css);
 
   s = { canvas: out, css, letterW: lw, asc };
@@ -204,17 +204,17 @@ function pieces() {
 
 /** Enemy type → piece + height in cells. */
 export const ENEMY_LOOK = {
-  grunt:    { piece: 'pawn', h: 0.4 },
-  swarm:    { piece: 'pawn', h: 0.28 },
-  runner:   { piece: 'knight', h: 0.46 },
-  flyer:    { piece: 'knight', h: 0.38, float: true },
-  tank:     { piece: 'rook', h: 0.56 },
-  armored:  { piece: 'rook', h: 0.5, band: true },
-  healer:   { piece: 'bishop', h: 0.48, plus: true },
-  stealth:  { piece: 'bishop', h: 0.46, ghost: true },
-  vandal:   { piece: 'queen', h: 0.52 },
-  splitter: { piece: 'queen', h: 0.48, split: true },
-  boss:     { piece: 'king', h: 1.05 },
+  grunt:    { piece: 'pawn', h: 0.55 },
+  swarm:    { piece: 'pawn', h: 0.42 },
+  runner:   { piece: 'knight', h: 0.68 },
+  flyer:    { piece: 'knight', h: 0.56, float: true },
+  tank:     { piece: 'rook', h: 0.8 },
+  armored:  { piece: 'rook', h: 0.72, band: true },
+  healer:   { piece: 'bishop', h: 0.7, plus: true },
+  stealth:  { piece: 'bishop', h: 0.66, ghost: true },
+  vandal:   { piece: 'queen', h: 0.76 },
+  splitter: { piece: 'queen', h: 0.7, split: true },
+  boss:     { piece: 'king', h: 1.6 },
 };
 
 export function lookFor(e) {
@@ -267,7 +267,7 @@ export function enemyIcon(type, px = 26) {
     const g = c.getContext('2d');
     g.scale(dpr, dpr);
     const look = ENEMY_LOOK[type] || ENEMY_LOOK.grunt;
-    const h = px * (0.55 + Math.min(0.4, look.h * 0.6));
+    const h = px * (0.5 + Math.min(0.45, look.h * 0.4));
     drawPiece(g, look.piece, px / 2, px * 0.96, Math.min(px * 0.95, h), { alpha: look.ghost ? 0.5 : 1, halo: false });
     url = c.toDataURL();
   } catch { /* ignore */ }
@@ -289,14 +289,15 @@ export function towerIcon(spec, px = 64) {
 function makeTowerIcon(spec, px) {
   try {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const S = px / 1.55;
+    const S = px / 2.5;
     const spr = letterSprite(spec.word[0], spec.color || elementColor(spec.element), S, dpr);
     const c = document.createElement('canvas');
     c.width = c.height = Math.round(px * dpr);
     const g = c.getContext('2d');
     g.scale(dpr, dpr);
-    g.drawImage(spr.canvas, px / 2 - spr.css / 2 + S * 0.14, px / 2 - spr.css / 2 - S * 0.1, spr.css, spr.css);
-    drawAsterisk(g, px / 2 + spr.letterW / 2 + S * 0.06, px / 2 - S * 0.42, S * 0.07);
+    const lx = px / 2 + S * 0.2, ly = px / 2 - S * 0.1;
+    g.drawImage(spr.canvas, lx - spr.css / 2, ly - spr.css / 2, spr.css, spr.css);
+    drawAsterisk(g, lx + spr.letterW / 2 + S * 0.08, ly - spr.asc / 2 + S * 0.04, S * 0.12);
     return c.toDataURL();
   } catch {
     return '';

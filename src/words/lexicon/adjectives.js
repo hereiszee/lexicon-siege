@@ -5,13 +5,16 @@ export default [
   A('big', 'blast', 'earth', 'splash', 'big', '⬛', 'Pounds the path with heavy blows',
     `big large huge giant enormous massive colossal immense vast gigantic monumental mammoth titanic heavy
  hefty bulky jumbo whopping mighty tremendous gargantuan hulking towering monstrous prodigious bloated
- great grand voluminous sizable sizeable`, { mods: { damage: 1.25, rate: 0.9, hp: 1.15 } }),
+ great grand voluminous sizable sizeable
+ fat`, { mods: { damage: 1.25, rate: 0.9, hp: 1.15 } }),
   A('small', 'rapid', 'arcane', '', 'small', '▪', 'Fires a stream of tiny shots',
     `small tiny little mini minor petite miniature wee teeny slight compact puny diminutive microscopic
- minuscule minute dainty bitsy itty pocket baby lean slim slender thin narrow`, { mods: { rate: 1.25, damage: 0.92 } }),
+ minuscule minute dainty bitsy itty pocket baby lean slim slender thin narrow
+ short`, { mods: { rate: 1.25, damage: 0.92 } }),
   A('fast', 'rapid', 'storm', '', 'speed', '⚡', 'Fires in a blur',
     `fast quick swift rapid speedy hasty fleet nimble agile brisk prompt lively zippy snappy express
- breakneck hurried headlong sudden instant immediate restless frantic frenetic quicksilver`, { mods: { rate: 1.3, damage: 0.96 } }),
+ breakneck hurried headlong sudden instant immediate restless frantic frenetic quicksilver
+ busy`, { mods: { rate: 1.3, damage: 0.96 } }),
   A('slow', 'blast', 'earth', 'stun:0.5', 'slow', '🐢', 'Deals slow, crushing blows',
     `slow sluggish lazy idle languid leisurely ponderous lumbering plodding torpid lethargic sleepy drowsy
  patient steady deliberate gradual unhurried dull`, { mods: { damage: 1.35, rate: 0.8 } }),
@@ -24,14 +27,16 @@ export default [
   A('fiery', 'bolt', 'fire', 'burn', 'fire heat', '🔥', 'Spits flame',
     `fiery hot burning blazing flaming scorching fervent torrid sweltering ardent molten searing incandescent
  ablaze aflame afire alight smoldering sizzling boiling scalding infernal volcanic
- igneous red crimson scarlet vermilion orange ember ruddy`, { conv: true, mods: { damage: 1.08 } }),
+ igneous red crimson scarlet vermilion orange ember ruddy
+ dry arid parched`, { conv: true, mods: { damage: 1.08 } }),
   A('frozen', 'aura', 'ice', 'slow freeze:0.6', 'ice cold', '❄', 'Freezes the air around it',
     `frozen icy cold frosty freezing frigid chilly glacial wintry arctic polar gelid snowy iced frostbitten
  hoary numb bitter brisk cool chilled sleety white pale ivory`, { conv: true, mods: { range: 1.05 } }),
   A('ancient', 'snipe', 'arcane', 'crit:0.5', 'old time', '🏺', 'Strikes with the weight of ages',
     `ancient old elder elderly antique archaic primeval primordial venerable timeless ageless prehistoric aged
  olden bygone immemorial antediluvian hoary vintage classic legendary mythic eternal everlasting
- undying immortal perennial`, { mods: { hp: 1.3, range: 1.1, damage: 1.05 } }),
+ undying immortal perennial
+ primal perpetual`, { mods: { hp: 1.3, range: 1.1, damage: 1.05 } }),
   A('young', 'rapid', 'nature', '', 'young new', '🌱', 'Fires eager, quick shots',
     `new young fresh novel modern youthful juvenile recent green budding nascent infant raw early first
  newborn spry sprightly`, { mods: { rate: 1.15, hp: 0.95 } }),
@@ -52,7 +57,8 @@ export default [
  galvanic voltaic crackling static violet purple`, { conv: true }),
   A('earthy', 'blast', 'earth', 'knockback', 'earth', '⛰', 'Hurls earth',
     `earthy rocky stony muddy sandy dusty rugged firm craggy gravelly granite earthen terrestrial
- subterranean underground brown tan beige ochre umber`, { conv: true, mods: { hp: 1.1 } }),
+ subterranean underground brown tan beige ochre umber
+ rough russet`, { conv: true, mods: { hp: 1.1 } }),
   A('green', 'bolt', 'nature', 'poison:0.6', 'nature', '🌿', 'Lashes with living growth',
     `verdant leafy lush wild natural organic floral wooden woody grassy mossy overgrown blooming flowery
  sylvan pastoral rustic feral untamed emerald olive`, { conv: true, mods: { hp: 1.1 } }),
@@ -65,7 +71,8 @@ export default [
  marvelous marvellous magenta`, { conv: true, mods: { damage: 1.05 } }),
   A('holy', 'support', 'light', 'heal', 'holy', '😇', 'Radiates holy light that heals nearby towers',
     `holy sacred divine blessed saintly pious righteous pure heavenly celestial angelic hallowed godly
- virtuous noble sanctified consecrated spiritual devout reverent innocent white`, { conv: true, mods: { damage: 1.1 } }),
+ virtuous noble sanctified consecrated spiritual devout reverent innocent white
+ `, { conv: true, mods: { damage: 1.1 } }),
   A('evil', 'bolt', 'shadow', 'poison:0.5', 'evil', '😈', 'Strikes with malice',
     `evil wicked vile cruel malicious vicious nasty foul villainous fiendish diabolical demonic infernal
  sinful malevolent nefarious heinous monstrous depraved corrupt treacherous hellish satanic unholy`, { conv: true, mods: { damage: 1.25, hp: 0.9 } }),
@@ -74,7 +81,8 @@ export default [
  festering diseased sickly sick ill fetid acrid acidic caustic radioactive`, { mods: { damage: 1.05 } }),
   A('deadly', 'snipe', 'shadow', 'execute crit:0.6', 'death', '💀', 'Kills with precision',
     `deadly lethal fatal mortal murderous savage brutal ferocious bloodthirsty ruthless merciless relentless
- killer cutthroat vicious grisly gruesome bloody gory`, { mods: { damage: 1.12 } }),
+ killer cutthroat vicious grisly gruesome bloody gory
+ dead`, { mods: { damage: 1.12 } }),
   A('long', 'snipe', 'storm', '', 'range', '📏', 'Reaches across the field',
     `long far distant tall lofty high remote farsighted elevated soaring towering 
  extended endless boundless infinite`, { mods: { range: 1.3 } }),
@@ -84,7 +92,8 @@ export default [
   A('tough', 'support', 'earth', 'shield', 'defense', '🛡', 'Shields nearby towers',
     `safe secure protective defensive guarded shielded resilient durable sturdy hardened impenetrable
  invulnerable unbreakable indestructible steadfast staunch unyielding stubborn tenacious enduring
- resistant fortified armoured`, { mods: { hp: 1.4 } }),
+ resistant fortified armoured
+ indomitable invincible`, { mods: { hp: 1.4 } }),
   A('rich', 'harvest', 'light', 'harvest.ink', 'money', '💰', 'Overflows with ink',
     `rich wealthy lucky fortunate prosperous affluent opulent lavish luxurious costly expensive precious
  valuable priceless gilded moneyed flush plentiful abundant bountiful fruitful profitable`, { mods: { damage: 1.03 }, conv: false }),
@@ -94,10 +103,12 @@ export default [
   A('happy', 'support', 'light', 'buff.rate', 'joy', '😊', 'Cheers on nearby towers',
     `happy kind gentle cheerful friendly merry jolly glad joyful jovial jubilant gleeful elated ecstatic
  delighted content pleased sunny bubbly peppy upbeat optimistic hopeful warm loving caring tender
- generous sweet`, { mods: { rate: 1.1 } }),
+ generous sweet
+ pink`, { mods: { rate: 1.1 } }),
   A('angry', 'rapid', 'fire', 'crit', 'anger', '😡', 'Lashes out furiously',
     `angry furious mad irate enraged wrathful livid frenzied raging berserk fierce wild savage rabid
- incensed seething fuming irritable cross hostile aggressive belligerent violent`, { mods: { damage: 1.3, rate: 1.1, hp: 0.85 } }),
+ incensed seething fuming irritable cross hostile aggressive belligerent violent
+ insanity lunacy`, { mods: { damage: 1.3, rate: 1.1, hp: 0.85 } }),
   A('sad', 'aura', 'water', 'slow', 'sadness', '😢', 'Weighs down nearby foes',
     `sad gloomy melancholy mournful tearful weeping sorrowful glum miserable forlorn woeful dismal dreary
  bleak doleful lonely blue depressed despondent grieving heartbroken wretched`, { mods: { range: 1.05 } }),
@@ -122,8 +133,9 @@ export default [
     `brave bold courageous valiant heroic daring fearless intrepid gallant plucky dauntless gutsy
  audacious undaunted lionhearted chivalrous honorable honourable loyal faithful proud`, { mods: { damage: 1.1 } }),
   A('weak', 'rapid', 'water', '', 'weak', '·', 'Pokes feebly but cheaply',
-    `weak feeble frail fragile flimsy meek timid shy faint delicate brittle soft tender gentle limp wobbly
- shaky puny scrawny poor`, { mods: { rate: 1.12, damage: 0.95, hp: 0.9 } }),
+    `weak feeble frail fragile flimsy meek timid shy faint delicate brittle  tender gentle limp wobbly
+ shaky puny scrawny poor
+ low`, { mods: { rate: 1.12, damage: 0.95, hp: 0.9 } }),
   A('scary', 'aura', 'shadow', 'slow', 'fear', '👻', 'Spooks nearby foes',
     `scary spooky creepy frightening terrifying horrifying haunted ghostly ghastly macabre grim dreadful
  fearsome frightful hideous horrible horrid nightmarish menacing threatening`, { mods: { range: 1.08 } }),
@@ -155,7 +167,8 @@ A('good', 'support', 'light', 'heal:0.7', 'good', '👍', 'Does nearby towers go
     `good nice great fine excellent superb wonderful lovely pleasant decent splendid fantastic awesome
      terrific super brilliant admirable worthy`, { mods: { damage: 1.08, hp: 1.08 } }),
   A('bad', 'bolt', 'shadow', 'poison:0.6', 'bad', '👎', 'Does foes harm',
-    `bad awful terrible dire lousy harmful dangerous perilous hazardous grievous baleful nasty`, { mods: { damage: 1.15, hp: 0.92 } }),
+    `bad awful terrible dire lousy harmful dangerous perilous hazardous grievous baleful nasty
+ sour`, { mods: { damage: 1.15, hp: 0.92 } }),
   A('hard', 'support', 'earth', 'shield', 'hard', '🪨', 'Hardens nearby towers',
     `hard rigid stiff dense solid sturdy rocky stiffened tempered unbending`, { mods: { hp: 1.3 } }),
   A('soft', 'support', 'water', 'heal:0.7', 'soft', '☁', 'Cushions nearby towers',
@@ -163,7 +176,8 @@ A('good', 'support', 'light', 'heal:0.7', 'good', '👍', 'Does nearby towers go
   A('easy', 'rapid', 'light', '', 'easy', '🙂', 'Fires freely and often',
     `easy simple plain breezy effortless handy casual relaxed carefree`, { mods: { rate: 1.12 } }),
   A('full', 'support', 'nature', 'heal', 'full', '🫙', 'Tops up nearby towers',
-    `full whole complete entire filled loaded stuffed brimming replete packed`, { mods: { hp: 1.15 } }),
+    `full whole complete entire filled loaded stuffed brimming replete packed
+ alive living`, { mods: { hp: 1.15 } }),
   A('empty', 'aura', 'shadow', 'slow', 'empty', '🕳', 'Hollows out nearby foes',
     `empty hollow vacant bare blank barren desolate deserted abandoned forsaken`, { mods: { range: 1.1 } }),
   A('clean', 'support', 'water', 'heal', 'clean', '🧼', 'Scrubs nearby towers clean',

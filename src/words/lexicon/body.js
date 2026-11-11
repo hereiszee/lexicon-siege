@@ -22,14 +22,16 @@ export default [
  foresight hindsight insight`),
   C('skeleton', 'support', 'earth', 'shield:0.9', 'body bone', '🦴', 'Braces nearby towers with bone',
     `rib ribs spine spines backbone skull femur tibia pelvis vertebra vertebrae jawbone cheekbone collarbone
- kneecap sternum cartilage exoskeleton carapace scales scale shell shells`),
+ kneecap sternum cartilage exoskeleton carapace scales scale shell shells
+ back`),
   C('head', 'support', 'arcane', 'buff.range:0.9', 'body mind', '🗣', 'Directs nearby towers\' aim',
     `head heads face faces forehead brow cheek cheeks chin nose noses ear ears mouth mouths lip lips neck necks
- throat throats hair beard beards mustache moustache scalp temple temples nape`),
+ throat throats hair beard beards mustache moustache scalp temple  nape`),
   C('noise', 'aura', 'storm', 'stun', 'sound noise', '📢', 'Deafens nearby foes',
     `scream screams shriek shrieks roar roars howl howls yell yells shout shouts bellow bellows screech
  screeches wail wails clamor clamour din racket noise noises uproar bang bangs crash crashes boom thunder
  voice voices cry cries holler shouter siren sirens alarm klaxon foghorn whistle whistles bell bells
  chime chimes gong gongs megaphone loudspeaker bullhorn echo echoes cacophony tumult commotion
- hubbub thunderclap `),
+ hubbub thunderclap
+ `),
 ];

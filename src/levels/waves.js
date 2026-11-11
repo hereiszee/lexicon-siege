@@ -1,7 +1,7 @@
 // Wave generation and threat accounting.
 //
-// Every wave gets an HP budget  B(d) · (1 + perWave·w)  where B(d) grows geometrically but
-// gently with difficulty d (TUNING.hpGrowth per level). Budgets are split across 1–3 enemy
+// Every wave gets an HP budget  B(d) · (1 + perWave·w)  where B(d) grows as a power of the
+// difficulty d (≈ d^TUNING.hpExp: flat in the tutorial, steep early, flattening late). Budgets are split across 1–3 enemy
 // groups; long-range scaling goes partly into enemy count and partly into hpMul so counts
 // stay readable. Bosses close every 10th level; mini-bosses appear later on.
 
@@ -10,14 +10,20 @@ import { ENEMIES } from '../core/constants.js';
 /** Balance knobs — tune these in the balance pass. */
 export const TUNING = {
   baseWaveHp: 120,      // wave-1 HP budget at difficulty 1
-  hpGrowth: 1.0025,     // per-level geometric growth of the budget (≈12× over 1000 levels)
+  hpExp: 0.66,          // long-range growth of the budget = ((d + hpOffset) / (1 + hpOffset))^hpExp
+  hpOffset: 1.76,       //   (≈49× at 1000, ≈11× at 100; the offset keeps the tutorial levels flat)
   perWave: 0.32,        // within-level ramp: wave w has budget × (1 + perWave·w)
-  hpShare: 0.6,         // fraction of long-range growth (in log space) that goes into hpMul
+  firstWaveHp: 0.42,    // hpMul of the first wave relative to the last (linear in between), so
+                        // the long-range growth bites as the level goes on, not before wave 1
+  twoPathHp: 0.75,      // budget multiplier on two-path levels (defences are split across both)
+  hpShare: 0.9,         // fraction of long-range growth (in log space) that goes into hpMul; the rest
+                        // adds enemies, and with them bounty ink, so keep it high
   minWaves: 5,
   extraWaves: 17,       // waves → minWaves + extraWaves·(1 − e^(−d/waveScale))
   waveScale: 300,
-  speedGrowth: 0.15,    // speedMul reaches 1 + speedGrowth at difficulty 1000
-  bossHpExp: 0.9,       // boss hpMul = growth^bossHpExp
+  speedGrowth: 0.3,     // speedMul reaches 1 + speedGrowth at difficulty 1000
+  bossHpExp: 0.75,      // boss hpMul = bossHpMul · growth^bossHpExp (split between twin bosses)
+  bossHpMul: 2,
   miniBossFrom: 150,    // first difficulty with mini-bosses
   maxCount: 40,
 };
@@ -44,7 +50,7 @@ export function waveCountFor(d) {
 }
 
 /** Long-range growth factor (1 at d=1). */
-export const growthFor = (d) => Math.pow(TUNING.hpGrowth, d - 1);
+export const growthFor = (d) => Math.pow((Math.max(1, d) + TUNING.hpOffset) / (1 + TUNING.hpOffset), TUNING.hpExp);
 
 export function hpMulFor(d) {
   return round2(Math.pow(growthFor(d), TUNING.hpShare));
@@ -88,7 +94,8 @@ function typeWeights(d, unlocked) {
 export function generateWaves(rng, d, { boss = false, pathCount = 1 } = {}) {
   const count = Math.max(TUNING.minWaves, waveCountFor(d) + (d > 20 ? rng.int(-1, 1) : 0));
   const growth = growthFor(d);
-  const hpMul = hpMulFor(d);
+  const pathHp = pathCount > 1 ? TUNING.twoPathHp : 1;
+  const levelHpMul = hpMulFor(d) * pathHp;
   const baseSpeed = speedMulFor(d);
   const intervalMul = 1 - 0.3 * (d - 1) / 999;
   const unlocked = unlockedAt(d);
@@ -99,7 +106,9 @@ export function generateWaves(rng, d, { boss = false, pathCount = 1 } = {}) {
 
   for (let w = 0; w < count; w++) {
     const last = w === count - 1;
-    const budget = TUNING.baseWaveHp * growth * (1 + TUNING.perWave * w);
+    const ramp = TUNING.firstWaveHp + (1 - TUNING.firstWaveHp) * w / Math.max(1, count - 1);
+    const hpMul = round2(Math.max(1, levelHpMul * ramp));
+    const budget = TUNING.baseWaveHp * growth * (1 + TUNING.perWave * w) * (hpMul / levelHpMul) * pathHp;
     // Group types for this wave
     let nGroups = 1 + (w >= count / 3 ? 1 : 0) + (w >= (2 * count) / 3 && d > 30 ? 1 : 0);
     nGroups = Math.min(nGroups, unlocked.length);
@@ -144,7 +153,7 @@ export function generateWaves(rng, d, { boss = false, pathCount = 1 } = {}) {
       groups.push({
         enemy: 'boss', count: 1, interval: 0, delay: round2(delay), path: pathCursor,
         hpMul: round2(Math.pow(growth, TUNING.bossHpExp) * 0.35 * (1 + 0.04 * w)),
-        speedMul: round2(baseSpeed * 1.2), miniBoss: true,
+        speedMul: round2(baseSpeed * 1.1), miniBoss: true,
       });
       if (pathCount > 1) pathCursor = (pathCursor + 1) % pathCount;
     }
@@ -152,7 +161,7 @@ export function generateWaves(rng, d, { boss = false, pathCount = 1 } = {}) {
     // Boss finale
     if (last && boss) {
       const bosses = d >= 500 && d % 100 === 0 ? 2 : 1;
-      const bossMul = round2(Math.pow(growth, TUNING.bossHpExp) * (1 + 0.5 * Math.min(1, d / 200)) / bosses);
+      const bossMul = round2(TUNING.bossHpMul * Math.pow(growth, TUNING.bossHpExp) / bosses);
       for (let b = 0; b < bosses; b++) {
         groups.push({
           enemy: 'boss', count: 1, interval: 0, delay: round2(delay + 4 + b * 6),
@@ -173,6 +182,8 @@ export function levelThreat(level) {
   const perWave = [];
   const byEnemy = {};
   let enemies = 0;
+  // two-path levels get less hp because the defence is split; count that back in as threat
+  const pathMul = (level.paths?.length ?? 1) > 1 ? 1 / TUNING.twoPathHp : 1;
   for (const wave of level.waves) {
     let hp = 0;
     for (const g of wave.groups) {
@@ -180,7 +191,7 @@ export function levelThreat(level) {
       byEnemy[g.enemy] = (byEnemy[g.enemy] || 0) + g.count;
       enemies += g.count;
     }
-    perWave.push(Math.round(hp));
+    perWave.push(Math.round(hp * pathMul));
   }
   return { total: perWave.reduce((a, b) => a + b, 0), perWave, byEnemy, enemies };
 }

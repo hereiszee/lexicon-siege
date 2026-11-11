@@ -18,9 +18,11 @@ export default [
   C('masonry', 'support', 'earth', 'shield:1.2', 'stone building', '🧱', 'Walls nearby towers in stone',
     `granite marble basalt slate limestone sandstone concrete cement brick bricks mortarboard masonry mason
  masons stonemason stonemasons bricklayer bricklayers flagstone flagstones paving pavement asphalt tarmac
- ashlar keystone cornerstone foundation foundations bedrock rampart stonework brickwork plaster stucco`),
+ ashlar keystone cornerstone foundation foundations bedrock  stonework brickwork plaster stucco
+ floor floors arch
+ `),
   C('minerals', 'bolt', 'earth', 'armorBreak:0.6', 'earth mineral', '◆', 'Fires sharp mineral shards',
-    `mineral minerals salt salts coal charcoal graphite chalk lime saltpeter saltpetre potash mica talc
+    `mineral minerals salt salts coal charcoal graphite chalk  saltpeter saltpetre potash mica talc
  gypsum feldspar borax calcite dolomite fluorite pyrite galena hematite magnetite bauxite
  cinnabar ore halite crystalline geode geodes fossil fossils`, { mass: true }),
   C('glass', 'rapid', 'ice', 'crit:0.7', 'glass material', '🔹', 'Sprays shards of glass',

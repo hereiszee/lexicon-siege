@@ -148,8 +148,12 @@ export function createGameScreen(root, opts) {
     }
     clear(composeTiles);
     compose.hidden = composed.length === 0; // must be visible before measuring for the FLIP below
+    // shrink the big tiles so long words stay on one row (7px gap between tiles)
+    const n = composed.length, avail = Math.min(boardArea.clientWidth - 40, 660);
+    const size = Math.max(30, Math.min(58, Math.floor((avail - (n - 1) * 7) / Math.max(1, n))));
     composed.forEach((idx, k) => {
       const el = tileEl(state.rack[idx], 'tile big', () => removeAt(k));
+      el.style.setProperty('--tile-size', size + 'px');
       el.title = 'Click to put back';
       composeTiles.appendChild(el);
       if (flipFrom && k === composed.length - 1) {
@@ -260,7 +264,7 @@ export function createGameScreen(root, opts) {
       const s = check.spec;
       const tw = !!check.canTower, aug = !!check.canAugment;
       if (!tw && !aug) { txt = check.towerReason || check.augmentReason || "Can't be used right now"; cls = 'warn'; }
-      else if (!armed) { txt = s.augment ? 'Press Enter, then click a spot to build or a tower to power up' : 'Press Enter, then click a spot beside the path'; cls = 'ok'; }
+      else if (!armed) { txt = tw && aug ? 'Press Enter, then click a spot to build or a tower to power up' : tw ? 'Press Enter, then click a spot beside the path' : 'Press Enter, then click a tower to power it up'; cls = 'ok'; }
       else if (tw && aug) { txt = `Click a spot to build (${s.cost} ink) or a tower to augment (${s.augment.cost} ink)`; cls = 'ok'; }
       else if (tw) { txt = `Click a free spot to build · ${s.cost} ink`; cls = 'ok'; }
       else { txt = `Click a tower to augment · ${s.augment.cost} ink`; cls = 'ok'; }
@@ -291,7 +295,8 @@ export function createGameScreen(root, opts) {
   function updateSide(force = false) {
     const w = word();
     let key, build;
-    if (w.length >= 2 && spec) {
+    // No preview for non-words: the engine returns a spec for any letters, which reads as "this would work".
+    if (w.length >= 2 && spec && dictionary.has(w)) {
       const afford = spec.cost <= state.ink;
       key = `w|${w}|${check?.ok}|${afford}|${Math.floor(state.ink / 5)}`;
       build = () => towerCard(spec, { ink: state.ink, themeMul: safeTheme(spec) });
@@ -381,7 +386,7 @@ export function createGameScreen(root, opts) {
 
   function sell(id) {
     const r = game.sellTower(id);
-    if (r?.ok) { showToast(`Sold for ${r.refund} ink`, 'good'); selectedId = null; updateSide(true); }
+    if (r?.ok) { showToast(`Sold for ${r.refund} ink`, 'good'); selectedId = null; updateSide(true); updateDamage(); }
     else showToast(r?.reason || "Can't sell right now", 'bad');
   }
 
@@ -414,7 +419,7 @@ export function createGameScreen(root, opts) {
   btnReroll.onclick = () => {
     const r = game.redrawRack();
     if (!r?.ok) { showToast(r?.reason || "Can't reroll", 'bad'); shake(btnReroll); }
-    else { composed = []; armed = false; onRackChanged(); }
+    else { composed = []; armed = false; order = [...Array(state.rack.length).keys()]; onRackChanged(); }
   };
   btnShuffle.onclick = () => { game.shuffleRack(); order = [...Array(state.rack.length).keys()]; onRackChanged(); };
   btnAlpha.onclick = () => { order = [...Array(state.rack.length).keys()].sort((a, b) => (state.rack[a] || '~').localeCompare(state.rack[b] || '~') || a - b); renderRack(); };
@@ -519,7 +524,7 @@ export function createGameScreen(root, opts) {
 
   function updateDamage() {
     if (dmgList.matches(':hover')) return;
-    const rows = state.towers.slice().sort((a, b) => (b.damageDealt ?? b.kills ?? 0) - (a.damageDealt ?? a.kills ?? 0)).slice(0, 7);
+    const rows = state.towers.slice().sort((a, b) => (b.damageDealt ?? b.kills ?? 0) - (a.damageDealt ?? a.kills ?? 0)).slice(0, 6);
     clear(dmgList);
     if (!rows.length) { dmgList.appendChild(h('li', { class: 'empty' }, 'Build towers to see who does the work.')); return; }
     for (const tw of rows) {

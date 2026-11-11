@@ -8,13 +8,16 @@ export default [
  marquis marquess viscount lady ladies noble nobles nobleman noblemen noblewoman royalty majesty sovereign
  sovereigns ruler rulers kaiser khan khans rajah rajahs maharaja maharajah viceroy chieftain chieftains
  chief chiefs heir heirs heiress dauphin infanta caliph emir emirs shah sheikh lordship monarchy kingdom
- kingdoms empire empires realm realms dynasty dynasties court courtier courtiers scepter regalia`),
+ kingdoms empire empires realm realms dynasty dynasties court courtier courtiers scepter regalia
+ coronation
+ `),
   C('commanders', 'support', 'metal', 'buff.rate', 'military leader person', '🎖', 'Drills nearby towers to fire faster',
     `general generals captain captains commander commanders colonel colonels major majors lieutenant
  lieutenants sergeant sergeants marshal marshals admiral admirals officer officers warlord warlords
  commodore commodores corporal corporals brigadier ensign ensigns strategist strategists tactician
  tacticians commandant warchief overlord overlords drillmaster quartermaster adjutant aide centurion
- centurions tribune legate generalissimo field marshal headquarters command`),
+ centurions tribune legate generalissimo field marshal headquarters command
+ tyrant despot usurper tyranny dominion conqueror`),
   C('soldiers', 'summon', 'metal', 'summon', 'military person', '💂', 'Deploys soldiers onto the path',
     `soldier soldiers troop troops trooper troopers infantry infantryman infantrymen army armies legion legions
  legionary legionaries legionnaire regiment regiments battalion battalions platoon platoons squad squads
@@ -32,23 +35,26 @@ export default [
   C('guards', 'support', 'metal', 'shield', 'guard person defense', '💂', 'Stands guard, shielding nearby towers',
     `guard guards guardian guardians sentinel sentinels watchman watchmen bodyguard bodyguards wardens keeper
  keepers gatekeeper gatekeepers bouncer bouncers custodian custodians lookout lookouts patrol patrols
- watch watchtower sentries escort escorts doorman doormen jailer jailers turnkey constable picket
- vigil vigilante vigilantes`),
+ watch  sentries escort escorts doorman doormen jailer jailers turnkey constable picket
+ vigil vigilante vigilantes
+ gargoyle
+ `),
   C('police', 'bolt', 'metal', 'stun:0.8', 'law person', '👮', 'Stuns foes and hauls them in',
     `police policeman policemen policewoman cop cops constable constables sheriff sheriffs deputy deputies
- detective detectives inspector inspectors trooper lawman lawmen bailiff bailiffs officer agent agents
- investigator investigators enforcer enforcers ranger marshal judge judges magistrate magistrates jury
+ detective detectives inspector inspectors trooper lawman lawmen bailiff bailiffs officer  agents
+ investigator investigators enforcer enforcers  marshal judge judges magistrate magistrates jury
  juror jurors lawyer lawyers attorney attorneys prosecutor prosecutors justice law laws court verdict`),
   C('thieves', 'harvest', 'shadow', 'harvest.ink:1.05', 'crime shadow person', '🦹', 'Pilfers ink from the shadows',
     `thief thieves robber robbers burglar burglars bandit bandits brigand brigands outlaw outlaws pickpocket
  pickpockets smuggler smugglers poacher poachers rogue rogues scoundrel scoundrels crook crooks swindler
- swindlers cheat cheats looter looters marauder marauders highwayman highwaymen fence fences grifter
+ swindlers cheat cheats looter looters marauder marauders highwayman highwaymen  fences grifter
  grifters conman conmen racketeer racketeers gangster gangsters mobster mobsters bootlegger forger forgers
  embezzler shoplifter heist heists robbery robberies burglary theft thefts larceny loot plunder pillage
  booty swag`),
   C('pirates', 'bolt', 'water', 'bounty', 'sea crime person', '🏴', 'Plunders foes for extra ink',
     `pirate pirates buccaneer buccaneers corsair corsairs privateer privateers freebooter freebooters
- sea dog seadog cutlass plank parrot `),
+ sea dog seadog cutlass plank parrot
+ mutiny`),
   C('sailors', 'summon', 'water', 'summon', 'sea person', '⚓', 'Lands a crew of sailors on the path',
     `sailor sailors seaman seamen mariner mariners seafarer seafarers boatman boatmen navigator navigators
  crew crews deckhand deckhands oarsman oarsmen helmsman boatswain bosun skipper skippers shipmate
@@ -75,22 +81,26 @@ export default [
     `builder builders architect architects engineer engineers construction constructor contractor
  contractors laborer laborers labourer labourers worker workers workman workmen craftsman craftsmen
  craftswoman artisan artisans scaffold scaffolding blueprint blueprints crane bulldozer bulldozers
- excavator foreman foremen surveyor surveyors draftsman`),
+ excavator foreman foremen surveyor surveyors draftsman
+ ladder`),
   C('hunters', 'snipe', 'nature', 'crit reveal', 'hunt person', '🏹', 'Tracks and picks off distant foes',
     `hunter hunters huntsman huntsmen huntress huntresses trapper trappers tracker trackers scout scouts
  stalker woodsman pathfinder pathfinders gamekeeper gamekeepers hunt hunts hunting tracking safari
- falconer `),
+ falconer
+ ranger rangers`),
   C('spies', 'support', 'shadow', 'buff.range', 'spy shadow person', '🕵', 'Spies out targets for nearby towers',
     `spy spies spymaster agent operative operatives informant informants informer informers
  sleuth sleuths snoop snoops eavesdropper mole double saboteur saboteurs infiltrator infiltrators
- espionage intelligence surveillance reconnaissance recon scouting lookout`),
+ espionage intelligence surveillance reconnaissance recon scouting lookout
+ `),
   C('performers', 'support', 'arcane', 'buff.rate', 'art music person', '🎭', 'Performs to quicken nearby towers',
     `bard bards minstrel minstrels troubadour troubadours jester jesters clown clowns juggler jugglers dancer
  dancers singer singers actor actors actress actresses performer performers entertainer entertainers
  comedian comedians mime mimes puppeteer puppeteers ballerina ballerinas showman storyteller storytellers
  poet poets musician musicians magician fool fools harlequin acrobat circus circuses carnival carnivals
  theater theatre theaters theatres stage stages show shows play plays drama comedy tragedy opera operas
- ballet concert concerts festival festivals parade parades`),
+ ballet concert concerts festival festivals parade parades
+ costume masquerade`),
   C('laborers', 'harvest', 'earth', 'harvest.ink:0.95', 'work person', '🧑', 'Toils away for ink',
     `peasant peasants serf serfs servant servants butler butlers maidservant porter porters steward stewards
  valet valets vassal vassals tenant tenants peon drudge drudges coolie hireling hirelings
@@ -100,7 +110,7 @@ export default [
     `cook cooks chef chefs baker bakers butcher butchers brewer brewers vintner vintners confectioner
  chocolatier caterer caterers waiter waiters waitress waitresses bartender bartenders barman barmaid
  sommelier kitchen kitchens bakery bakeries brewery breweries restaurant restaurants cafe cafes diner
- diners canteen cafeteria galley`),
+ diners canteen cafeteria `),
   C('firefighters', 'support', 'water', 'shield:0.8 heal:0.5', 'water rescue person', '🚒', 'Douses danger around nearby towers',
     `firefighter firefighters fireman firemen firehouse fireboat rescuer rescuers rescue rescues
  savior saviour saviors lifesaver lifesavers paramedic`),
@@ -109,7 +119,8 @@ export default [
  governor governors mayor mayors ambassador ambassadors diplomat diplomats envoy envoys consul consuls
  delegate delegates politician politicians statesman statesmen councillor councilor councillors
  parliament congress senate council councils assembly government governments republic nation nations
- state states country countries federation alliance alliances league leagues union unions treaty`),
+ state states country countries federation alliance alliances league leagues union unions treaty
+ flag banner pennant emblem motto tabard blazon`),
   C('people', 'summon', 'earth', 'summon:0.9', 'person', '🧍', 'Sends townsfolk to block the path',
     `person persons people folk folks citizen citizens villager villagers townsfolk townsman crowd crowds mob
  mobs throng throngs populace public community communities neighbor neighbours neighbour neighbors
@@ -120,5 +131,6 @@ export default [
  grandmother grandfather grandma grandpa nephew niece twin twins elder elders youth youths teen teens
  adult adults stranger strangers guest guests visitor visitors traveler travelers traveller wanderer
  wanderers nomad nomads pilgrim settler settlers pioneer pioneers colonist colonists explorer explorers
- adventurer adventurers`),
+ adventurer adventurers
+ wayfarer rover vagabond voyager journey voyage expedition`),
 ];
