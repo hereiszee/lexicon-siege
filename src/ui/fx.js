@@ -20,6 +20,9 @@ export function createFx() {
   const banners = [];    // {text,sub,life,max}
   const stamps = new Map();
   const lastBoom = new Map();
+  const hits = new Map();   // tower id → time last damaged
+  const snaps = new Map();  // trap tower id → time last fired
+  const lastPulse = new Map();
   let shake = 0, flash = 0, now = 0;
 
   function spark(x, y, color, n = 5, speed = 2.2, life = 0.3, r = 0.03) {
@@ -47,8 +50,8 @@ export function createFx() {
     banners.length = 0;
     banners.push({ text: t, sub, life, max: life });
   }
-  function boom(x, y, radius) {
-    const r = Math.max(0.45, Math.min(1.6, radius || 0.8));
+  function boom(x, y, radius, big = false) {
+    const r = Math.max(0.45, Math.min(big ? 2.2 : 1.6, radius || 0.8));
     const discs = [];
     const n = 3 + Math.floor(Math.random() * 3);
     for (let i = 0; i < n; i++) discs.push({ dx: (Math.random() - 0.5) * r * 0.7, dy: (Math.random() - 0.5) * r * 0.7, r: r * (0.35 + Math.random() * 0.4) });
@@ -71,6 +74,16 @@ export function createFx() {
           streaks.push({ x: ev.x, y: ev.y, tx: ev.tx, ty: ev.ty, color: a === 'snipe' ? '#ef5a1c' : col, life: 0.2, max: 0.2, width: a === 'snipe' ? 0.035 : 0.03, kind: a });
         } else if (a === 'aura') {
           ring(ev.x, ev.y, 0.3, 1.0, col, 0.5, 0.025);
+        } else if (a === 'pulse') {
+          // one shockwave per pulse even if the engine reports one shot per enemy
+          if (now - (lastPulse.get(ev.towerId) ?? -1) > 0.15) {
+            lastPulse.set(ev.towerId, now);
+            const r = look.tower(ev.towerId)?.stats?.range || 1.5;
+            ring(ev.x, ev.y, 0.2, r, col, 0.55, 0.07);
+            ring(ev.x, ev.y, 0.1, r * 0.7, '#ffffff', 0.4, 0.03);
+          }
+        } else if (a === 'trap') {
+          snaps.set(ev.towerId, now);
         }
         break;
       }
@@ -78,7 +91,11 @@ export function createFx() {
         const tw = ev.towerId != null ? look.tower(ev.towerId) : null;
         const arch = tw?.spec?.archetype;
         const splash = tw?.stats?.splash || (tw?.effects || []).find((e) => e.type === 'splash')?.radius || 0;
-        if (arch === 'blast' || splash > 0) {
+        if (arch === 'trap' && now - (snaps.get(ev.towerId) ?? -1) > 0.3) snaps.set(ev.towerId, now);
+        if (arch === 'mortar') {
+          const last = lastBoom.get(ev.towerId) ?? -1;
+          if (now - last > 0.2) { lastBoom.set(ev.towerId, now); boom(ev.x, ev.y, (splash || 1.2) * 1.2, true); shake = Math.max(shake, 0.12); }
+        } else if (arch === 'blast' || splash > 0) {
           const last = lastBoom.get(ev.towerId) ?? -1;
           if (now - last > 0.12) { lastBoom.set(ev.towerId, now); boom(ev.x, ev.y, splash || 0.8); }
         } else {
@@ -133,6 +150,26 @@ export function createFx() {
         text(x, y - 0.6, ev.resource === 'tile' ? '+REROLL' : `+${Math.round(ev.amount || 0)} INK`, ev.resource === 'tile' ? '#2f6fb5' : '#3f9b45', 0.2, 1.3);
         break;
       }
+      case 'towerHit': {
+        // bite/vandal arrive every 0.25 s while it lasts: flash at most once a second, not a strobe
+        const steady = ev.source === 'bite' || ev.source === 'vandal';
+        if (!steady || now - (hits.get(ev.towerId) ?? -9) > 1) hits.set(ev.towerId, now);
+        const t = look.tower(ev.towerId);
+        const x = ev.x ?? t?.x, y = ev.y ?? t?.y;
+        if (x == null) break;
+        spark(x, y - 0.2, '#6b6e75', 3, 1.6, 0.25, 0.035);
+        if (ev.damage >= 1) text(x + 0.25, y - 0.55, `−${Math.round(ev.damage)}`, '#7a1f12', 0.17, 0.7);
+        break;
+      }
+      case 'enemyShot': // the stone itself is a projectile (kind 'sling'); just a flick of dust at the thrower
+        puff(ev.x, ev.y - 0.3, 0.1, 0.4, 0.25);
+        break;
+      case 'stomp':
+        ring(ev.x, ev.y, 0.3, 1.5, '#2b2b30', 0.6, 0.09);
+        ring(ev.x, ev.y, 0.2, 1.1, '#8a7a5a', 0.5, 0.05);
+        puff(ev.x, ev.y + 0.2, 0.5, 1.0, 0.3, 5);
+        shake = Math.max(shake, 0.25);
+        break;
       case 'heal': {
         const x = ev.x ?? look.tower(ev.towerId)?.x, y = ev.y ?? look.tower(ev.towerId)?.y;
         if (x == null) break;
@@ -303,5 +340,7 @@ export function createFx() {
     get shake() { return shake; },
     bulges() { return bulgeList.map((b) => ({ x: b.x, y: b.y, r: b.r, k: Math.sin((1 - b.life / b.max) * Math.PI) })); },
     stampAge(id) { const t0 = stamps.get(id); return t0 == null ? Infinity : now - t0; },
+    hitAge(id) { const t0 = hits.get(id); return t0 == null ? Infinity : now - t0; },
+    snapAge(id) { const t0 = snaps.get(id); return t0 == null ? Infinity : now - t0; },
   };
 }

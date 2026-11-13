@@ -9,9 +9,12 @@ function statRows(archetype, stats, withHp = true) {
   const rows = [];
   if (isAttacker(archetype)) {
     rows.push([isContinuous(archetype) ? 'DPS' : 'Damage', fmt(s.damage)]);
-    if (!isContinuous(archetype)) rows.push(['Rate', `${fmt(s.rate)}/s`], ['DPS', fmt(dpsOf(archetype, s))]);
+    if (archetype === 'orbit') rows.push(['Orbs', fmt(s.orbs || 1)]);
+    else if (!isContinuous(archetype)) rows.push([archetype === 'trap' ? 'Re-arm' : 'Rate', `${fmt(s.rate)}/s`], ['DPS', fmt(dpsOf(archetype, s))]);
   }
-  rows.push(['Range', fmt(s.range)]);
+  if (s.range || (archetype !== 'wall' && archetype !== 'trap')) rows.push(['Range', fmt(s.range)]);
+  if (s.minRange) rows.push(['Min range', fmt(s.minRange)]);
+  if (s.pull) rows.push(['Pull', `${fmt(s.pull)}/s`]);
   if (s.splash) rows.push(['Splash', fmt(s.splash)]);
   if (withHp) rows.push(['Health', fmt(s.hp)]);
   return h('div', { class: 'stats' }, rows.map(([k, v]) => h('div', { class: 'stat' }, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v))));
@@ -24,7 +27,7 @@ function chip(text, color) {
 }
 
 /**
- * Card for a TowerSpec. opts: { ink, themeMul, compact, count, footer }
+ * Card for a TowerSpec. opts: { ink, themeMul, compact, count, footer, letterBonuses:[{letter,tier,count,text}] }
  */
 export function towerCard(spec, opts = {}) {
   const info = archetypeInfo(spec.archetype);
@@ -50,6 +53,9 @@ export function towerCard(spec, opts = {}) {
       h('p', { class: 'desc' }, info.desc),
       statRows(spec.archetype, spec.stats),
       effects.length ? h('ul', { class: 'effects' }, effects.map((e) => h('li', null, e))) : null,
+      opts.letterBonuses?.length ? h('ul', { class: 'letter-bonuses' }, opts.letterBonuses.map((b) => h('li', null,
+        h('span', { class: 'mini-tile ' + (b.tier >= 2 ? 'gold' : 'silver') }, b.letter.toUpperCase()),
+        ` ${b.text}${b.count > 1 ? ` ×${b.count}` : ''}`))) : null,
       opts.themeMul > 1 ? h('p', { class: 'theme' }, `Theme bonus on this level: +${Math.round((opts.themeMul - 1) * 100)}% output`) : null,
       spec.augment ? h('p', { class: 'aug' },
         h('b', null, `Can also augment`), ` (${spec.augment.kind}, ${spec.augment.cost} ink): `, augmentSummary(spec.augment)) : null,

@@ -20,8 +20,8 @@ export default [
  masts hull hulls keel rudder anchorage
  oar`),
   C('aircraft', 'snipe', 'storm', 'splash:0.4 crit:0.5', 'vehicle sky', '✈', 'Strafes distant foes from the air',
-    `plane planes airplane airplanes aeroplane aeroplanes jet jets helicopter helicopters airship airships
- blimp blimps zeppelin zeppelins glider gliders biplane biplanes airliner bomber
+    `plane planes airplane airplanes aeroplane aeroplanes jet jets    
+     glider gliders biplane biplanes airliner 
  seaplane parachute parachutes paraglider hangglider airport airports runway aviator
  aviators pilot pilots copilot airman airmen aviation
  `),
@@ -33,15 +33,16 @@ export default [
     `money monies cash coin coins penny pennies dime dimes dollar dollars cent cents euro euros yen peso pesos
  ruble rubles rupee rupees franc francs shilling shillings ducat ducats florin florins doubloon doubloons
  currency currencies banknote banknotes wage wages salary salaries income incomes profit profits payment
- payments pay fee fees tax taxes tithe tithes rent rents interest revenue revenues fortune fortunes wealth
+ payments pay fee fees tax taxes tithe tithes rent rents  revenue revenues fortune fortunes wealth
  riches dividend dividends allowance pension paycheck bonus bonuses tip tips change token tokens farthing
  guinea sixpence nickel quarter`),
-  C('bank', 'harvest', 'metal', 'harvest.ink:1.2', 'money bank', '🏦', 'Earns interest in ink',
+  C('bank', 'harvest', 'metal', 'harvest.ink:0.8 interest', 'money bank', '🏦', 'Banks your ink and pays interest',
     `bank banks banker bankers treasury treasuries treasurer purse purses wallet wallets piggybank savings
  investor investors investment investments fund funds budget budgets credit credits loan loans
  capital stock stocks bond shares accountant accountants accounting cashier cashiers teller tellers
  financier financiers economist economy economics finance finances ledger ledgers account accounts
- deposit deposits mortgage cheque check checkbook moneybag moneybags safe deposit exchequer`),
+ deposit deposits mortgage cheque check checkbook moneybag moneybags safe deposit exchequer
+ vault vaults safes strongbox lockbox coffer coffers till moneybox interest`),
   C('treasure', 'harvest', 'light', 'harvest.ink:1.1', 'money treasure', '💰', 'Unearths treasure worth ink',
     `treasure treasures hoard hoards jackpot jackpots bounty bounties reward rewards prize prizes trophy
  trophies chest chests bonanza windfall windfalls heirloom heirlooms valuables trove troves cache caches
@@ -102,35 +103,35 @@ export default [
   C('acid', 'bolt', 'nature', 'armorBreak:1.3', 'poison acid', '🧪', 'Splashes acid that eats through armor',
     `acid acids lye bile corrosive solvent solvents caustic alkali vitriol `),
   // ---------------------------------------------------------------- traps
-  C('traps', 'aura', 'metal', 'stun slow:0.7', 'trap', '🪤', 'Snaps shut on foes that wander close',
+  C('traps', 'trap', 'metal', 'stun slow:0.7', 'trap', '🪤', 'Snaps shut on the foes that blunder into it',
     `trap traps snare snares net nets mesh tripwire tripwires pitfall pitfalls caltrop caltrops beartrap
- mousetrap mousetraps deadfall booby boobytrap gin snag snags hook hooks lure decoy decoys bait spring
- springtrap trapdoor trapdoors minefield
+ mousetrap mousetraps deadfall booby boobytrap gin snag snags       spring
+ springtrap trapdoor trapdoors 
  pit maze labyrinth`, { stat: { range: 0.85 } }),
-  C('sticky', 'aura', 'nature', 'slow:1.5', 'trap sticky', '🍯', 'Gums up nearby foes',
-    `glue glues tar resin resins sap gum gums paste pastes adhesive adhesives goo gunk molasses mucilage
+  C('sticky', 'trap', 'nature', 'slow:1.5', 'trap sticky', '🍯', 'Gums up every foe that steps in it',
+    `   resin resins sap gum gums paste pastes adhesive adhesives goo gunk molasses mucilage
  birdlime flypaper syrupy quagmire morass`),
-  C('chains', 'bolt', 'metal', 'slow:1.1 stun:0.3', 'trap metal bind', '⛓', 'Binds foes in chains',
+  C('chains', 'trap', 'metal', 'slow:1.1 stun:0.3', 'trap metal bind', '⛓', 'Clamps chains on whatever walks over it',
     `chain chains shackle shackles manacle manacles fetter fetters bond bonds handcuff handcuffs cuff cuffs
  bind binding bindings restraint restraints straitjacket gag yoke yokes collar collars
  `),
-  C('spikes', 'aura', 'metal', 'armorBreak', 'trap metal', '📍', 'Bristles with spikes that shred nearby foes',
-    `spikes stake impalement barbwire bristle bristles pin pins tack
- tacks thumbtack nail spur spurs prickle`),
+  C('spikes', 'trap', 'metal', 'armorBreak', 'trap metal', '📍', 'Bristles with spikes that shred whatever treads on it',
+    `  impalement barbwire bristle bristles pin pins 
+  thumbtack  spur spurs prickle`),
   // ---------------------------------------------------------------- music
   C('drums', 'support', 'storm', 'buff.rate', 'music war sound', '🥁', 'Beats a rhythm that quickens nearby towers',
-    `drum drums drummer drummers drumbeat tambourine tambourines cymbal cymbals timpani bongo bongos 
- bugle bugles trumpet trumpets fanfare fanfares march marches anthem anthems horn
- trumpeter bugler cadence rhythm rhythms beat beats tempo percussion snare kettledrum`),
+    `            
+ bugle bugles trumpet trumpets fanfare fanfares march marches   horn
+ trumpeter bugler cadence rhythm rhythms   tempo percussion snare `),
   C('music', 'support', 'light', 'buff.damage:0.9 heal:0.4', 'music art', '🎵', 'Plays music that inspires nearby towers',
     `song songs music musics melody melodies tune tunes lute lutes lyre lyres harp harps violin violins guitar
  guitars fiddle fiddles cello cellos piano pianos flute flutes harpsichord organ clarinet clarinets oboe
- saxophone trombone tuba accordion bagpipe bagpipes banjo mandolin ukulele harmonica xylophone
- glockenspiel recorder chorus choir choirs ballad ballads aria arias sonata symphony symphonies
- serenade serenades carol carols chant chants overture orchestra orchestras band bands composer
+ saxophone trombone  accordion bagpipe bagpipes banjo mandolin ukulele harmonica xylophone
+ glockenspiel recorder    ballad ballads aria arias sonata symphony symphonies
+ serenade serenades carol carols chant chants overture orchestra orchestras   composer
  composers conductor maestro singer orchestration musical harmony harmonies chord chords note
- opera anthem lyric lyrics jingle jingles jazz blues reggae funk disco rap techno swing
- tango waltz polka rumba samba foxtrot minuet jig gospel folksong
+   lyric lyrics jingle jingles        swing
+      foxtrot minuet   folksong
  nocturne finale crescendo`),
   // ---------------------------------------------------------------- misc everyday
   C('art', 'support', 'arcane', 'buff.range:0.85', 'art', '🎨', 'Paints a vision that extends nearby towers\' range',

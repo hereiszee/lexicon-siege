@@ -5,13 +5,13 @@ export default [
     `fist fists hand hands punch punches arm arms knuckle knuckles elbow elbows knee knees foot feet leg legs
  kick kicks shin shins heel heels palm thumb thumbs finger fingers toe toes wrist wrists shoulder
  shoulders hip hips limb limbs forearm forearms bicep biceps muscle muscles brawn uppercut haymaker
- jab jabs hook headbutt karate judo kungfu boxing wrestling grapple grip grips`),
+ jab jabs  headbutt karate judo kungfu  wrestling  grip grips`),
   C('fangs', 'rapid', 'nature', 'crit', 'body animal bite', '🦷', 'Snaps and tears with teeth and claws',
-    `tooth teeth fang fangs claw claws talon talons tusk tusks horn horns antler beak beaks jaw jaws bite bites
- molar molars incisor incisors canine nail nails pincer pincers mandible mandibles stinger tongue
+    `tooth teeth fang fangs claw claws talon talons tusk tusks horn horns antler beak beaks jaw  bite bites
+ molar molars incisor incisors canine   pincer pincers mandible mandibles stinger tongue
  tongues maw maws snout snouts muzzle`),
   C('organs', 'support', 'nature', 'heal', 'body life', '🫀', 'Pumps lifeblood into nearby towers',
-    `heart hearts lung lungs liver livers kidney kidneys blood bloods artery arteries vein veins stomach
+    `  lung lungs liver livers kidney kidneys blood bloods artery arteries vein veins stomach
  stomachs belly bellies gut guts intestine intestines bowel spleen pancreas bladder organ organs marrow
  plasma cell cells tissue tissues nerve nerves gland glands hormone hormones adrenaline sinew sinews
  tendon tendons ligament ligaments flesh body bodies torso chest chests ribcage`),
@@ -27,11 +27,11 @@ export default [
   C('head', 'support', 'arcane', 'buff.range:0.9', 'body mind', '🗣', 'Directs nearby towers\' aim',
     `head heads face faces forehead brow cheek cheeks chin nose noses ear ears mouth mouths lip lips neck necks
  throat throats hair beard beards mustache moustache scalp temple  nape`),
-  C('noise', 'aura', 'storm', 'stun', 'sound noise', '📢', 'Deafens nearby foes',
+  C('noise', 'pulse', 'storm', 'stun', 'sound noise', '📢', 'Lets out a deafening blast that rocks every foe in range',
     `scream screams shriek shrieks roar roars howl howls yell yells shout shouts bellow bellows screech
- screeches wail wails clamor clamour din racket noise noises uproar bang bangs crash crashes boom thunder
- voice voices cry cries holler shouter siren sirens alarm klaxon foghorn whistle whistles bell bells
- chime chimes gong gongs megaphone loudspeaker bullhorn echo echoes cacophony tumult commotion
- hubbub thunderclap
+ screeches wail wails clamor clamour din racket noise noises uproar bang bangs crash crashes  
+ voice voices cry cries holler shouter   alarm klaxon foghorn whistle whistles  
+        echo echoes cacophony tumult commotion
+ hubbub 
  `),
 ];

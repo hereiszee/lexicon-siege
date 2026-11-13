@@ -127,7 +127,7 @@ test('support/harvest/summon never attack', () => {
     game.update(1);
     assert.equal(e.hp, e.maxHp, arch);
   }
-  assert.equal(ARCHETYPES.length, 10);
+  assert.equal(ARCHETYPES.length, 16);
 });
 
 // ---------------------------------------------------------------- effects
@@ -373,16 +373,17 @@ test('summon: units stand on the path, block enemies, fight, die and respawn; fl
   assert.equal(u.ownerId, t.id);
   assert.equal(u.y, 4.5);
   const fly = enemy('flyer', 6, { speed: 2, hpMul: 100 });
-  const g = enemy('grunt', 6, { speed: 1, hpMul: 100 });
+  const g = enemy('grunt', 6, { speed: 1 });
+  g.hp = g.maxHp = 2000;
   game.update(2.5);
   assert.ok(fly.progress > u.progress + 1, 'flyer ignores units');
   assert.ok(g.progress < u.progress, 'grunt is held');
   assert.ok(g.hp < g.maxHp, 'unit fights');
-  assert.ok(u.hp < u.maxHp, 'enemy fights back at 5 dps');
+  assert.ok(u.hp < u.maxHp, 'enemy bites back (grunt bite 4 dps, growing)');
   game.update(1);
   assert.equal(game.state.units.length, 2, 'second unit summoned after interval');
   game.update(1);
-  assert.ok(u.dead, 'unit dies after 10 hp / 5 dps');
+  assert.ok(u.dead, 'unit dies: 4t + 0.2t² reaches 10 hp after ~2.1 s blocked');
   assert.ok(game.state.units.every((x) => !x.dead));
 });
 
@@ -394,8 +395,8 @@ test('selling a summoner removes its units', () => {
   assert.equal(game.state.units.length, 0);
 });
 
-test('effect strengths and merging (all 19 effect types known)', () => {
-  assert.equal(EFFECT_TYPES.length, 19);
+test('effect strengths and merging (all 20 effect types known)', () => {
+  assert.equal(EFFECT_TYPES.length, 20);
   for (const t of EFFECT_TYPES) assert.equal(typeof effectStrength({ type: t }), 'number');
   const m = mergeEffects([{ type: 'slow', factor: 0.8, duration: 2 }], [{ type: 'slow', factor: 0.5, duration: 2 }]);
   assert.equal(m[0].factor, 0.5, 'lower slow factor is stronger');

@@ -3,7 +3,7 @@
 import { DEFAULTS, ELEMENTS } from '../core/constants.js';
 import { hashString, makeRng } from '../core/rng.js';
 import { generateMap } from './mapgen.js';
-import { generateWaves } from './waves.js';
+import { generateWaves, newEnemiesAt } from './waves.js';
 import { generateRules, makeLetterWeights, makeBonus, enemyElementFor } from './rules.js';
 
 export const LEVEL_COUNT = 1000;
@@ -49,13 +49,15 @@ export function makeLevel(word, difficulty, towerFor, meta = {}) {
   const twoPaths = mapRng.chance(twoPathChance);
   const { paths, blocked, style } = generateMap(mapRng, { cols: DEFAULTS.cols, rows: DEFAULTS.rows, difficulty: d, twoPaths });
 
-  const waves = generateWaves(sub('waves'), d, { boss, pathCount: paths.length });
+  const waves = generateWaves(sub('waves'), d, { boss, pathLengths: paths.map((p) => p.length - 1) });
   const bonus = makeBonus(spec, spec.element, d);
   const rules = generateRules(sub('rules'), d, { word: w, bonusElement: bonus.element, waveCount: waves.length });
 
   const lives = DEFAULTS.lives + Math.floor(d / 70); // +1 every 70 levels (smooth, no 250-level steps)
-  // late waves are tough from the start: the opening ink grows with difficulty (100 → 500)
-  const startInk = DEFAULTS.startInk + Math.round(d * 0.4) + (boss ? 10 : 0);
+  // late waves are tough from the start: the opening ink grows with difficulty (100 → 500);
+  // "must contain X" starves the rack, so those levels open with more ink to stay level with their neighbours
+  const mustInk = rules.some((r) => r.type === 'mustContain') ? 1.6 : 1;
+  const startInk = Math.round((DEFAULTS.startInk + Math.round(d * 0.4) + (boss ? 10 : 0)) * mustInk);
 
   return {
     id: meta.id ?? 0,
@@ -73,6 +75,7 @@ export function makeLevel(word, difficulty, towerFor, meta = {}) {
     rackSize: DEFAULTS.rackSize,
     letterWeights: makeLetterWeights(w, rules),
     waves,
+    newEnemies: newEnemiesAt(d), // enemy types first unlocked at this difficulty (at most one)
     rules,
     bonus,
     stars: { two: { livesAtLeast: Math.ceil(lives / 2) }, three: { livesAtLeast: lives } },

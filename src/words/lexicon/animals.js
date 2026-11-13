@@ -40,14 +40,14 @@ export default [
  grasshoppers cricket crickets cicada cicadas horde hordes nest beekeeper apiary infestation
  cockroach cockroaches roach roaches vermin`),
   C('bugs', 'bolt', 'nature', 'slow:0.5', 'animal insect', '🐞', 'Spits at foes with a chitinous crunch',
-    `beetle beetles bug bugs insect insects ladybug ladybugs ladybird butterfly butterflies moth moths
+    `beetle beetles bug bugs insect insects ladybug ladybugs ladybird butterfly butterflies  
  caterpillar caterpillars worm worms earthworm earthworms maggot maggots larva larvae grub grubs slug
- snail snails centipede centipedes millipede millipedes dragonfly dragonflies firefly fireflies fly flies
+ snail snails centipede centipedes millipede millipedes dragonfly dragonflies   fly flies
  housefly mayfly damselfly mantis mantises weevil weevils aphid aphids cocoon chrysalis pupa 
  earwig silverfish woodlouse scarab scarabs
  leech`),
   C('spiders', 'bolt', 'nature', 'slow poison:0.6', 'animal spider poison', '🕷', 'Spins webs and bites',
-    `spider spiders tarantula tarantulas arachnid arachnids web webs cobweb cobwebs widow recluse 
+    `spider spiders tarantula tarantulas arachnid arachnids     widow recluse 
  `),
   C('snakes', 'bolt', 'nature', 'poison:1.2', 'animal snake poison', '🐍', 'Strikes with venomous fangs',
     `snake snakes serpent serpents viper vipers cobra cobras python pythons adder adders asp asps rattlesnake
@@ -55,7 +55,7 @@ export default [
  sidewinders cottonmouth moccasin taipan constrictor constrictors basilisk naga nagas`),
   C('reptiles', 'blast', 'earth', 'knockback', 'animal reptile', '🐊', 'Snaps and thrashes at the path',
     `crocodile crocodiles alligator alligators croc crocs gator gators lizard lizards iguana iguanas gecko
- geckos komodo chameleon chameleons tortoise tortoises turtle turtles terrapin monitor reptile reptiles
+ geckos komodo chameleon chameleons      monitor reptile reptiles
  caiman caimans skink skinks`),
   C('dinosaurs', 'blast', 'earth', 'knockback:1.3 stun:0.5', 'animal dinosaur beast', '🦖', 'Stomps foes flat',
     `dinosaur dinosaurs dino dinos tyrannosaur tyrannosaurus triceratops brontosaurus stegosaurus velociraptor
@@ -69,16 +69,16 @@ export default [
  fin`),
   C('sharks', 'bolt', 'water', 'crit:1.2', 'animal fish predator water', '🦈', 'Tears into foes with rows of teeth',
     `shark sharks orca orcas barracuda barracudas piranha piranhas moray morays eel eels stingray stingrays
- hammerhead mako squid squids octopus octopuses octopi kraken krakens cuttlefish
+ hammerhead mako     octopi   
  leviathan dogfish
- tentacle`),
+ `),
   C('whales', 'blast', 'water', 'knockback', 'animal water sea', '🐋', 'Breaches and swamps the path',
     `whale whales walrus walruses manatee manatees dolphin dolphins porpoise porpoises seal seals 
  narwhal narwhals beluga belugas humpback humpbacks dugong otter otters`),
   C('shellfish', 'support', 'water', 'shield', 'animal water shell', '🦀', 'Lends nearby towers a hard shell',
     `crab crabs lobster lobsters shrimp prawn prawns clam clams oyster oysters mussel mussels scallop scallops
  barnacle barnacles seashell seashells shell conch conches cockle cockles crayfish crawfish  limpet
- limpets nautilus armadillo armadillos pangolin pangolins
+ limpets nautilus    
  `),
   C('jellies', 'aura', 'water', 'stun', 'animal water poison', '🪼', 'Stings everything that drifts close',
     `jellyfish anemone anemones coral corals urchin urchins starfish polyp polyps sponge sponges
@@ -100,13 +100,13 @@ export default [
  roebuck springbok ibex chamois okapi giraffe giraffes`),
   C('rodents', 'summon', 'shadow', 'summon.horde', 'animal rodent', '🐀', 'Sends scurrying rodents onto the path',
     `rat rats mouse mice rodent rodents squirrel squirrels chipmunk chipmunks hamster hamsters gerbil gerbils
- beaver beavers mole moles vole voles weasel weasels ferret ferrets stoat stoats mink minks badger badgers
+   mole moles vole voles weasel weasels ferret ferrets stoat stoats mink minks badger badgers
  raccoon raccoons opossum opossums possum possums lemming lemmings shrew shrews marmot
  marmots gopher gophers muskrat muskrats dormouse woodchuck groundhog meerkat meerkats mongoose`),
   C('skunk', 'aura', 'nature', 'poison slow:0.5', 'animal poison', '🦨', 'Fouls the air around it',
     `skunk skunks polecat polecats stinkbug stinkhorn`),
   C('bats', 'chain', 'shadow', 'reveal', 'animal night', '🦇', 'Sends bats flitting foe to foe',
-    `bat bats batwing echolocation
+    `bat bats batwing 
  `),
   C('primates', 'rapid', 'nature', 'stun:0.4', 'animal primate', '🐒', 'Flings fruit and fury',
     `monkey monkeys ape apes gorilla gorillas chimp chimps chimpanzee chimpanzees baboon baboons orangutan

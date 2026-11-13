@@ -37,6 +37,6 @@ export default [
  confidence willpower ambition vigor`),
   C('cunning', 'snipe', 'shadow', 'crit execute:0.5', 'mind trick', '🦊', 'Outwits and picks off distant foes',
     `cunning trick tricks trickster tricksters trickery deceit deception ruse ruses ploy ploys scheme schemes
- schemer plot plots gambit feint feints ambush guile wile wiles stratagem subterfuge treachery betrayal
+ schemer plot plots gambit feint feints  guile wile wiles stratagem subterfuge treachery betrayal
  traitor traitors con hoax hoaxes bluff bluffs deceiver liar liars`),
 ];

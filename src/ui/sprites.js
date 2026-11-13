@@ -89,6 +89,18 @@ export function letterSprite(letter, color, S, dpr, disabled = false) {
   }
   fg.fillStyle = 'rgba(255,255,255,0.18)';
   for (let i = 0; i < 60; i++) fg.fillRect(cx - lw / 2 + rnd() * lw, cy - asc / 2 + rnd() * asc, S * 0.035, S * 0.035);
+  if (disabled) {
+    // cracked: a few dark zig-zags across the face
+    fg.strokeStyle = 'rgba(40,40,46,0.75)';
+    fg.lineWidth = Math.max(1, S * 0.03);
+    fg.lineJoin = 'round';
+    for (let c = 0; c < 3; c++) {
+      let x = cx - lw * 0.4 + rnd() * lw * 0.8, y = cy - asc * 0.75;
+      fg.beginPath(); fg.moveTo(x, y);
+      while (y < cy + asc * 0.3) { x += (rnd() - 0.5) * S * 0.35; y += S * (0.12 + rnd() * 0.12); fg.lineTo(x, y); }
+      fg.stroke();
+    }
+  }
   o.drawImage(fc, 0, 0, css, css);
 
   s = { canvas: out, css, letterW: lw, asc };
@@ -211,6 +223,7 @@ export const ENEMY_LOOK = {
   tank:     { piece: 'rook', h: 0.8 },
   armored:  { piece: 'rook', h: 0.72, band: true },
   healer:   { piece: 'bishop', h: 0.7, plus: true },
+  slinger:  { piece: 'bishop', h: 0.62, sling: true },
   stealth:  { piece: 'bishop', h: 0.66, ghost: true },
   vandal:   { piece: 'queen', h: 0.76 },
   splitter: { piece: 'queen', h: 0.7, split: true },
@@ -255,10 +268,24 @@ export function drawPiece(ctx, kind, x, y, h, opts = {}) {
   ctx.restore();
 }
 
+/** Slinger mark: a strap swinging from the shoulder with a stone at its end. (x, y) = piece base. */
+export function drawSling(ctx, x, y, h, color = '#121212', t = 0) {
+  const a = Math.sin(t * 6) * 0.25;
+  const sx = x + h * 0.14, sy = y - h * 0.62;
+  const ex = sx + Math.cos(-0.9 + a) * h * 0.42, ey = sy + Math.sin(-0.9 + a) * h * 0.42;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.2, h * 0.05); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(sx + h * 0.3, sy + h * 0.05, ex, ey); ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(ex, ey, Math.max(1.6, h * 0.09), 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
 /** Small standalone enemy icon as a data URL (wave previews). */
 const iconCache = new Map();
 export function enemyIcon(type, px = 26) {
-  if (iconCache.has(type)) return iconCache.get(type);
+  const key = type + '|' + px;
+  if (iconCache.has(key)) return iconCache.get(key);
   let url = '';
   try {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -268,10 +295,12 @@ export function enemyIcon(type, px = 26) {
     g.scale(dpr, dpr);
     const look = ENEMY_LOOK[type] || ENEMY_LOOK.grunt;
     const h = px * (0.5 + Math.min(0.45, look.h * 0.4));
-    drawPiece(g, look.piece, px / 2, px * 0.96, Math.min(px * 0.95, h), { alpha: look.ghost ? 0.5 : 1, halo: false });
+    const ph = Math.min(px * 0.95, h) * (look.sling ? 0.85 : 1);
+    drawPiece(g, look.piece, px / 2 - (look.sling ? px * 0.08 : 0), px * 0.96, ph, { alpha: look.ghost ? 0.5 : 1, halo: false });
+    if (look.sling) drawSling(g, px / 2 - px * 0.08, px * 0.96, ph);
     url = c.toDataURL();
   } catch { /* ignore */ }
-  iconCache.set(type, url);
+  iconCache.set(key, url);
   return url;
 }
 

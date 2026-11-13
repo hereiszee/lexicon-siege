@@ -27,8 +27,22 @@ export const ARCH_BASE = {
   support: { damage: 0, rate: 1, range: 2, splash: 0, projectileSpeed: 10, hp: 70, cost: 1.05 },
   harvest: { damage: 0, rate: 1, range: 1, splash: 0, projectileSpeed: 10, hp: 50, cost: 1 },
   summon: { damage: 0, rate: 1, range: 1.8, splash: 0, projectileSpeed: 10, hp: 65, cost: 1.08 },
+  // v2. wall: no attack, ≈4× a bolt's hp; range = contact radius. trap: damage per trigger, rate = rearms/s,
+  // range = fixed 0.6 trigger radius. mortar: minRange + big splash. vortex: damage is DPS + pull.
+  // pulse: damage per shockwave. orbit: damage per orb touch, range = orbit radius, orbs 1–4.
+  wall: { damage: 0, rate: 1, range: 0.5, splash: 0, projectileSpeed: 10, hp: 240, cost: 1.1 },
+  trap: { damage: 16, rate: 0.4, range: 0.6, splash: 0, projectileSpeed: 10, hp: 80, cost: 1.05 },
+  mortar: { damage: 12, rate: 0.3, range: 5, splash: 1.2, projectileSpeed: 4, hp: 60, cost: 1.15, minRange: 1.5 },
+  vortex: { damage: 1.6, rate: 1, range: 1.8, splash: 0, projectileSpeed: 10, hp: 70, cost: 1.2, pull: 0.6 },
+  pulse: { damage: 7, rate: 0.45, range: 1.7, splash: 0, projectileSpeed: 10, hp: 75, cost: 1.08 },
+  orbit: { damage: 5, rate: 1, range: 1.2, splash: 0, projectileSpeed: 10, hp: 65, cost: 1.06 },
 };
-const ATTACKERS = new Set(['bolt', 'blast', 'snipe', 'rapid', 'beam', 'chain', 'aura']);
+/** Archetypes that deal damage (stats.damage > 0) and carry on-hit effects. */
+export const ATTACKERS = new Set(['bolt', 'blast', 'snipe', 'rapid', 'beam', 'chain', 'aura', 'trap', 'mortar', 'vortex', 'pulse', 'orbit']);
+/** Archetypes whose effects are on-hit (walls apply theirs to whatever bites them). */
+const ON_HIT_ARCH = new Set([...ATTACKERS, 'wall']);
+/** Placed on the path: their reach is a fixed contact radius, not a stat that scales. */
+const FIXED_RANGE = new Set(['wall', 'trap']);
 
 export function lengthFactor(L) {
   return Math.max(0.5, 1 + 0.375 * (Math.min(L, 20) - 3));
@@ -77,7 +91,7 @@ export function buildSpec(word, m) {
   let element = tpl.elem;
   const modTpl = m.modTpl;
   let elemFromMod = false;
-  if (modTpl && modTpl.elem !== element && (modTpl.conv || tpl.arch === 'support' || tpl.arch === 'harvest' || tpl.arch === 'summon' || rng.chance(0.5))) {
+  if (modTpl && modTpl.elem !== element && (modTpl.conv || !ATTACKERS.has(arch) || rng.chance(0.5))) {
     element = modTpl.elem;
     elemFromMod = true;
   }
@@ -101,6 +115,16 @@ export function buildSpec(word, m) {
     stats.damage = r2(base.damage * P * (st.damage || 1) * rateComp * j());
   }
   if (arch === 'blast') stats.splash = r2(clamp(base.splash * (1 + 0.06 * (f - 1)) * j(), 0.6, 2.2));
+  if (arch === 'mortar') {
+    stats.splash = r2(clamp(base.splash * (1 + 0.06 * (f - 1)) * j(), 0.9, 2.4));
+    stats.minRange = r2(clamp(base.minRange * j(0.95, 1.05), 1, stats.range * 0.5));
+  }
+  if (arch === 'vortex') stats.pull = r2(clamp(base.pull * (st.pull || 1) * (1 + 0.05 * (f - 1)) * j(), 0.3, 1.2));
+  if (arch === 'orbit') {
+    stats.orbs = clamp(Math.round(1 + (L - 3) / 2.5) + (st.orbs || 0), 1, 4);
+    stats.damage = r2(stats.damage / Math.sqrt(stats.orbs)); // more orbs, lighter each
+  }
+  if (FIXED_RANGE.has(arch)) stats.range = base.range;
 
   // effects
   const ctx = { P, f, L, cost, j: jEff };
@@ -110,12 +134,12 @@ export function buildSpec(word, m) {
   if (tw.invert) tplFx = tplFx.map((t) => (INVERT_FX[t.type] ? { ...t, type: INVERT_FX[t.type] } : t));
   if (modTpl && elemFromMod) {
     const extra = modTpl.fx.find((x) => ON_HIT.has(x.type));
-    if (extra && ATTACKERS.has(arch)) tplFx.push({ ...extra, mult: (extra.mult || 1) * 0.7 });
+    if (extra && ON_HIT_ARCH.has(arch)) tplFx.push({ ...extra, mult: (extra.mult || 1) * 0.7 });
   }
   for (const t of tplFx) {
     if (seen.has(t.type) || effects.length >= 3) continue;
-    if (ATTACKERS.has(arch) ? !ON_HIT.has(t.type) : ON_HIT.has(t.type)) continue;
-    if (arch === 'blast' && t.type === 'splash') {
+    if (ON_HIT_ARCH.has(arch) ? !ON_HIT.has(t.type) : ON_HIT.has(t.type)) continue;
+    if ((arch === 'blast' || arch === 'mortar') && t.type === 'splash') {
       stats.splash = r2(clamp(stats.splash * (1 + 0.25 * (t.mult || 1)), 0.6, 2.4));
       continue;
     }
@@ -150,7 +174,7 @@ export function buildSpec(word, m) {
   if (tw.invert) tags.add('inverted');
 
   // flavor
-  let phrase = tpl.phrase;
+  let phrase = m.say || tpl.phrase;
   let glyph = tpl.glyph;
   if (tw.invert) {
     phrase = archPhrase(arch, element, effects[0] && effects[0].type, effects[0] && effects[0].resource, rng);
@@ -158,7 +182,7 @@ export function buildSpec(word, m) {
   } else if (elemFromMod) {
     phrase = `${phrase}, steeped in ${ELEM_NOUN[element]}`;
   }
-  const flavor = makeFlavor(phrase, arch, effects);
+  const flavor = makeFlavor(phrase, arch, effects, stats);
 
   return {
     word,
@@ -179,7 +203,11 @@ export function buildSpec(word, m) {
   };
 }
 
-function makeFlavor(phrase, arch, effects) {
+function makeFlavor(phrase, arch, effects, stats) {
+  if (arch === 'wall') {
+    const bite = effects.map(describeEffect).filter(Boolean);
+    return `${phrase} (${stats.hp} hp)${bite.length ? `; biters get hurt: ${bite.join(' and ')}` : ''}.`;
+  }
   if (!ATTACKERS.has(arch)) {
     // passive towers: the phrase says what it does; add the numbers
     return `${phrase} (${effects.map(passiveNumbers).join('; ')}).`;
@@ -187,7 +215,8 @@ function makeFlavor(phrase, arch, effects) {
   const clauses = effects.map(describeEffect).filter(Boolean);
   if (!clauses.length) {
     const how = { bolt: ' at the lead foe', blast: ', splashing nearby foes', snipe: ' from long range', rapid: ' in quick volleys',
-      beam: ' without pause', chain: '', aura: ' around itself' }[arch];
+      beam: ' without pause', chain: '', aura: ' around itself', trap: ' when stepped on', mortar: ' from far away',
+      vortex: ', dragging foes back', pulse: ' in shockwaves', orbit: ` with ${stats.orbs} circling orb${stats.orbs > 1 ? 's' : ''}` }[arch];
     return how && !phrase.includes(how.trim()) && !/foe|range|nearby|around/.test(phrase) ? `${phrase}${how}.` : `${phrase}.`;
   }
   const list = clauses.length === 1 ? clauses[0] : clauses.slice(0, -1).join(', ') + ' and ' + clauses[clauses.length - 1];
@@ -201,6 +230,7 @@ function passiveNumbers(e) {
     case 'shield': return `${Math.round(e.amount)} shield every ${Math.round(e.interval)}s`;
     case 'harvest': return e.resource === 'tile' ? `free redraw every ${Math.round(e.interval)}s` : `+${e.amount} ink every ${e.interval}s`;
     case 'summon': return `${e.count} defender${e.count > 1 ? 's' : ''} every ${Math.round(e.interval)}s`;
+    case 'interest': return `+${Math.round(e.pct * 100)}% interest per wave, max ${e.cap}`;
     default: return describeEffect(e);
   }
 }
@@ -226,8 +256,10 @@ function buildAugment(kind, at, towerTpl, element, c) {
     if (ATTACKERS.has(a)) {
       for (const t of at.fx) if (ON_HIT.has(t.type)) fxT.push(t);
       const am = { blast: { damage: 1.12 }, snipe: { range: 1.18 }, rapid: { rate: 1.18 }, beam: { damage: 1.12 },
-        chain: {}, aura: { range: 1.1 }, bolt: { damage: 1.1 } }[a];
+        chain: {}, aura: { range: 1.1 }, bolt: { damage: 1.1 }, trap: { damage: 1.1 }, mortar: { range: 1.15, damage: 1.05 },
+        vortex: {}, pulse: { damage: 1.08 }, orbit: { rate: 1.12 } }[a];
       Object.assign(mods, am);
+      if (a === 'vortex' && !fxT.length) fxT.push({ type: 'slow', mult: 0.8 });
       if (a === 'chain' && !fxT.some((t) => t.type === 'chain')) fxT.push({ type: 'chain', mult: 0.8 });
       if (!fxT.length && Object.keys(am).length === 0) mods.damage = 1.12;
     } else if (a === 'support') {
@@ -239,6 +271,9 @@ function buildAugment(kind, at, towerTpl, element, c) {
       fxT.push({ type: 'bounty', mult: 1 });
     } else if (a === 'summon') {
       mods.damage = 1.1; mods.hp = 1.15;
+    } else if (a === 'wall') {
+      mods.hp = 1.3;
+      for (const t of at.fx) if (ON_HIT.has(t.type)) fxT.push(t);
     }
   }
   // scale mods by intensity k, jitter

@@ -2,7 +2,11 @@
 import { ARCHETYPES, ELEMENTS, EFFECT_TYPES, RARITIES, ELEMENT_COLORS } from '../src/core/constants.js';
 
 const POS = ['noun', 'verb', 'adjective', 'adverb'];
+// classic projectile/beam/aura attackers (dps() is defined for these)
 const ATTACKERS = new Set(['bolt', 'blast', 'snipe', 'rapid', 'beam', 'chain', 'aura']);
+// everything that deals damage (v2 adds trap, mortar, vortex, pulse, orbit); walls, support, harvest, summon don't
+const DAMAGERS = new Set([...ATTACKERS, 'trap', 'mortar', 'vortex', 'pulse', 'orbit']);
+const ON_HIT_ARCH = new Set([...DAMAGERS, 'wall']); // walls apply on-hit effects to whatever bites them
 const ON_HIT = new Set(['burn', 'poison', 'slow', 'freeze', 'stun', 'pierce', 'chain', 'splash', 'crit', 'execute',
   'armorBreak', 'knockback', 'bounty', 'reveal']);
 
@@ -30,10 +34,11 @@ const EFFECT_CHECK = {
   shield: (e) => pos(e.amount) && pos(e.interval),
   harvest: (e) => ['ink', 'tile'].includes(e.resource) && pos(e.amount) && pos(e.interval),
   summon: (e) => pos(e.hp) && pos(e.damage) && int1(e.count) && pos(e.interval),
+  interest: (e) => frac(e.pct) && e.pct <= 0.2 && int1(e.cap),
 };
 
 function checkEffect(e, where) {
-  if (!e || !EFFECT_TYPES.includes(e.type)) return `${where}: bad effect type ${JSON.stringify(e)}`;
+  if (!e || !EFFECT_TYPES.includes(e.type) || !EFFECT_CHECK[e.type]) return `${where}: bad effect type ${JSON.stringify(e)}`;
   if (!EFFECT_CHECK[e.type](e)) return `${where}: bad params ${JSON.stringify(e)}`;
   return null;
 }
@@ -55,15 +60,26 @@ export function validateSpec(s, word, scoreWord) {
     if (typeof st[k] !== 'number' || !Number.isFinite(st[k]) || st[k] < 0) bad(`stats.${k} ${st[k]}`);
   }
   for (const k of ['rate', 'range', 'projectileSpeed', 'hp']) if (!(st[k] > 0)) bad(`stats.${k} not positive`);
-  const attacker = ATTACKERS.has(s.archetype);
+  const attacker = DAMAGERS.has(s.archetype);
   if (attacker && !(st.damage > 0)) bad('attacker without damage');
   if (!attacker && st.damage !== 0) bad('non-attacker with damage');
-  if (s.archetype === 'blast' && !(st.splash > 0)) bad('blast without splash');
+  if ((s.archetype === 'blast' || s.archetype === 'mortar') && !(st.splash > 0)) bad(`${s.archetype} without splash`);
+  // v2 archetype-specific stats; extra keys appear only where they mean something
+  const a = s.archetype;
+  if (a === 'mortar' && !(st.minRange >= 1 && st.minRange <= st.range / 2)) bad(`mortar minRange ${st.minRange}`);
+  if (a === 'vortex' && !(st.pull >= 0.3 && st.pull <= 1.2)) bad(`vortex pull ${st.pull}`);
+  if (a === 'orbit' && !(Number.isInteger(st.orbs) && st.orbs >= 1 && st.orbs <= 4)) bad(`orbit orbs ${st.orbs}`);
+  if ((a === 'wall' || a === 'trap') && !(st.range > 0 && st.range <= 1)) bad(`${a} contact range ${st.range}`);
+  if (a !== 'mortar' && 'minRange' in st) bad('minRange on non-mortar');
+  if (a !== 'vortex' && 'pull' in st) bad('pull on non-vortex');
+  if (a !== 'orbit' && 'orbs' in st) bad('orbs on non-orbit');
+  for (const k of ['minRange', 'pull', 'orbs']) if (k in st && !Number.isFinite(st[k])) bad(`stats.${k} ${st[k]}`);
   if (!Array.isArray(s.effects)) bad('effects not array');
   else {
     for (const e of s.effects) { const m = checkEffect(e, 'effect'); if (m) bad(m); }
     const types = s.effects.map((e) => e.type);
-    if (attacker && types.some((t) => !ON_HIT.has(t))) bad(`attacker with passive effect ${types}`);
+    if (ON_HIT_ARCH.has(s.archetype) && types.some((t) => !ON_HIT.has(t))) bad(`${s.archetype} with passive effect ${types}`);
+    if (!ON_HIT_ARCH.has(s.archetype) && types.some((t) => ON_HIT.has(t))) bad(`${s.archetype} with on-hit effect ${types}`);
     if (s.archetype === 'chain' && !types.includes('chain')) bad('chain without chain effect');
     if (s.archetype === 'support' && !types.some((t) => ['heal', 'buff', 'shield'].includes(t))) bad('support without heal/buff/shield');
     if (s.archetype === 'harvest' && !types.includes('harvest')) bad('harvest without harvest effect');
@@ -100,3 +116,4 @@ export function dps(s) {
 }
 
 export const isAttacker = (s) => ATTACKERS.has(s.archetype);
+export const isDamager = (s) => DAMAGERS.has(s.archetype);

@@ -14,7 +14,31 @@ const app = {
   screen: null,      // current screen controller { destroy }
   overlay: null,     // dictionary overlay during a game
   current: null,     // game screen controller while playing
+  hint: null,        // { finder, suggestWords } once the word finder is built
 };
+
+/** Keep ?level=N in the address bar in sync with the screen (other params kept). */
+function syncUrl(level) {
+  try {
+    const q = new URLSearchParams(location.search);
+    if (level) q.set('level', String(level)); else q.delete('level');
+    const s = q.toString();
+    history.replaceState(null, '', location.pathname + (s ? '?' + s : '') + location.hash);
+  } catch { /* ignore */ }
+}
+
+/** Build the hint finder once (~50 ms), off the boot path. */
+function buildHinter(sync = false) {
+  if (app.hint || !app.dictionary || !app.mods?.bot?.suggestWords || !app.mods.bot.makeWordFinder) return app.hint;
+  const make = () => {
+    if (app.hint) return;
+    try { app.hint = { finder: app.mods.bot.makeWordFinder(app.dictionary), suggestWords: app.mods.bot.suggestWords }; }
+    catch (err) { console.warn('hint finder', err); }
+  };
+  if (sync) make();
+  else (window.requestIdleCallback || ((f) => setTimeout(f, 400)))(make);
+  return app.hint;
+}
 
 function show(ctrl) {
   root.querySelector('.boot')?.remove();
@@ -53,7 +77,16 @@ async function loadModules() {
     themeBonus: out.levels.themeBonus,
     chapterOf: out.levels.chapterOf || null, // optional extra
     createGame: out.game.createGame,
+    RELICS: null,
+    bot: null,
   };
+}
+
+/** v2 extras; the game runs without them. */
+async function loadOptional(mods) {
+  const [relics, bot] = await Promise.allSettled([import('./game/relics.js'), import('./game/bot.js')]);
+  if (relics.status === 'fulfilled') mods.RELICS = relics.value.RELICS || null;
+  if (bot.status === 'fulfilled') mods.bot = bot.value;
 }
 
 function fail(title, lines, hint) {
@@ -64,6 +97,7 @@ function fail(title, lines, hint) {
 
 /* ------------------------------------------------------------------ routes */
 function goTitle() {
+  syncUrl(null);
   const hi = app.save ? app.save.highestUnlocked() : 1;
   const ctrl = titleScreen(root, {
     continueLevel: hi,
@@ -79,6 +113,7 @@ function goTitle() {
 }
 
 function goLevels(focus) {
+  syncUrl(null);
   show(levelSelectScreen(root, {
     levelFor: app.mods.levelFor, LEVEL_COUNT: app.mods.LEVEL_COUNT, chapterOf: app.mods.chapterOf, save: app.save,
     initialLevel: focus,
@@ -105,6 +140,7 @@ async function goLevel(n) {
     show(null);
     ctrl = createGameScreen(root, {
       mods: app.mods, dictionary: app.dictionary, levelNo: N, save: app.save,
+      hinter: () => buildHinter(true),
       nav: {
         levels: () => goLevels(N),
         level: (m) => goLevel(m),
@@ -124,6 +160,7 @@ async function goLevel(n) {
   }
   app.screen = ctrl;
   app.current = ctrl;
+  syncUrl(N);
 }
 
 /* ---------------------------------------------------------------- boot */
@@ -136,10 +173,11 @@ async function boot() {
       location.protocol === 'file:' ? 'Open the game through a web server: run “python3 -m http.server 4173” in the project folder and visit http://localhost:4173.' : 'Check the browser console for details.');
     return;
   }
+  await loadOptional(app.mods);
   app.save = createSave(app.mods.LEVEL_COUNT);
   if (params.get('unlock') === '1') app.save.unlockAll();
 
-  app.dictPromise = app.mods.loadDictionary().then((d) => { app.dictionary = d; return d; }).catch((err) => {
+  app.dictPromise = app.mods.loadDictionary().then((d) => { app.dictionary = d; buildHinter(); return d; }).catch((err) => {
     console.error(err);
     fail('The dictionary did not load', [String(err?.message || err)], 'The game needs data/words.txt (about 2 MB). Check that it exists and that you are using a web server.');
     throw err;

@@ -599,7 +599,6 @@ abysmal
 abysmally
 abyss
 abyssal
-abysses
 abyssobenthonic
 abyssolith
 abyssopelagic
@@ -3788,6 +3787,7 @@ aircrewman
 airdock
 airdrome
 airdrop
+airdrops
 aire
 airedale
 airer
@@ -4874,6 +4874,7 @@ allude
 allure
 allurement
 allurer
+allures
 alluring
 alluringly
 alluringness
@@ -11164,6 +11165,7 @@ armless
 armlet
 armload
 armoire
+armoires
 armonica
 armor
 armored
@@ -13226,6 +13228,7 @@ aurelia
 aurelian
 aureola
 aureole
+aureoles
 aureolin
 aureoline
 aureomycin
@@ -14599,6 +14602,7 @@ backfiring
 backflap
 backflash
 backflow
+backflows
 backfold
 backframe
 backfriend
@@ -14623,6 +14627,8 @@ backjaw
 backjoint
 backlands
 backlash
+backlashed
+backlashes
 backlashing
 backless
 backlet
@@ -14685,7 +14691,10 @@ backtack
 backtender
 backtenter
 backtrack
+backtracked
 backtracker
+backtracking
+backtracks
 backtrick
 backup
 backveld
@@ -18155,6 +18164,7 @@ besiege
 besieged
 besiegement
 besieger
+besiegers
 besieges
 besieging
 besiegingly
@@ -20235,6 +20245,7 @@ blendcorn
 blende
 blended
 blender
+blenders
 blending
 blendor
 blendure
@@ -20430,6 +20441,7 @@ blockage
 blockbuster
 blocked
 blocker
+blockers
 blockhead
 blockheaded
 blockheadedly
@@ -20843,6 +20855,7 @@ bobbin
 bobbiner
 bobbinet
 bobbing
+bobbins
 bobbinwork
 bobbish
 bobbishly
@@ -21046,6 +21059,7 @@ bolete
 boleweed
 bolewort
 bolide
+bolides
 bolimba
 bolis
 bolivar
@@ -21055,6 +21069,7 @@ boliviano
 bolk
 boll
 bollard
+bollards
 bolled
 boller
 bolling
@@ -21115,6 +21130,7 @@ bombarded
 bombardelle
 bombarder
 bombardier
+bombardiers
 bombarding
 bombardment
 bombardments
@@ -22670,6 +22686,7 @@ brichette
 brick
 brickbat
 brickcroft
+bricked
 brickel
 bricken
 brickfield
@@ -23701,6 +23718,7 @@ bulked
 bulker
 bulkhead
 bulkheaded
+bulkheads
 bulkily
 bulkiness
 bulking
@@ -23925,6 +23943,7 @@ bungling
 bunglingly
 bungmaker
 bungo
+bungs
 bungwall
 bungy
 bunion
@@ -24003,6 +24022,7 @@ bureaucratical
 bureaucratism
 bureaucratist
 bureaucratize
+bureaus
 bureaux
 burel
 burele
@@ -26638,6 +26658,7 @@ caridoid
 caries
 carillon
 carillonneur
+carillons
 carina
 carinal
 carinate
@@ -31121,6 +31142,7 @@ chumpaka
 chumpish
 chumpishness
 chumpy
+chums
 chumship
 chun
 chunari
@@ -31989,6 +32011,7 @@ clapperclaw
 clapperclawer
 clapperdudgeon
 clappermaclaw
+clappers
 clapping
 clapt
 claptrap
@@ -35576,6 +35599,7 @@ concusses
 concussing
 concussion
 concussional
+concussions
 concussive
 concutient
 concyclic
@@ -37827,6 +37851,7 @@ coronaled
 coronally
 coronamen
 coronary
+coronas
 coronate
 coronated
 coronation
@@ -39109,6 +39134,7 @@ cowardness
 cowardy
 cowbane
 cowbell
+cowbells
 cowberry
 cowbind
 cowbird
@@ -42427,7 +42453,9 @@ damkjernite
 damlike
 dammar
 damme
+dammed
 dammer
+damming
 dammish
 damn
 damnability
@@ -45487,6 +45515,7 @@ deruinate
 deruralize
 derust
 dervish
+dervishes
 dervishhood
 dervishism
 dervishlike
@@ -47886,6 +47915,7 @@ dirhem
 dirigent
 dirigibility
 dirigible
+dirigibles
 dirigomotor
 diriment
 dirk
@@ -48359,6 +48389,7 @@ discriminative
 discriminator
 discriminatory
 discrown
+discs
 disculpate
 disculpation
 disculpatory
@@ -48751,6 +48782,7 @@ disk
 diskelion
 diskless
 disklike
+disks
 dislaurel
 disleaf
 dislegitimate
@@ -50322,6 +50354,7 @@ doon
 door
 doorba
 doorbell
+doorbells
 doorboy
 doorbrand
 doorcase
@@ -50331,6 +50364,7 @@ doorframe
 doorhead
 doorjamb
 doorkeeper
+doorkeepers
 doorknob
 doorless
 doorlike
@@ -51439,6 +51473,8 @@ drummer
 drummers
 drumming
 drummy
+drumroll
+drumrolls
 drums
 drumskin
 drumstick
@@ -52407,6 +52443,7 @@ eavesdroppers
 eavesdropping
 ebb
 ebbman
+ebbs
 ebenaceous
 ebeneous
 eboe
@@ -52782,6 +52819,7 @@ edaphic
 edaphology
 edaphon
 edder
+eddies
 eddish
 eddo
 eddy
@@ -53452,6 +53490,7 @@ electronegative
 electronervous
 electronic
 electronics
+electrons
 electrooptic
 electrooptical
 electrooptics
@@ -55662,6 +55701,7 @@ entice
 enticeable
 enticeful
 enticement
+enticements
 enticer
 enticing
 enticingly
@@ -63389,6 +63429,7 @@ floodcock
 flooded
 flooder
 floodgate
+floodgates
 flooding
 floodless
 floodlet
@@ -63845,6 +63886,7 @@ flyspeck
 flytail
 flytier
 flytrap
+flytraps
 flyway
 flyweight
 flywheel
@@ -66482,7 +66524,9 @@ funmaking
 funnel
 funneled
 funnelform
+funneling
 funnellike
+funnels
 funnelwise
 funnily
 funniment
@@ -66799,6 +66843,7 @@ gaff
 gaffe
 gaffer
 gaffle
+gaffs
 gaffsman
 gag
 gagate
@@ -69000,6 +69045,7 @@ gignate
 gignitive
 gigolo
 gigot
+gigs
 gigsman
 gigster
 gigtree
@@ -69559,6 +69605,7 @@ globefish
 globeflower
 globeholder
 globelet
+globes
 globiferous
 globigerine
 globin
@@ -69768,6 +69815,7 @@ glowing
 glowingly
 glows
 glowworm
+glowworms
 gloy
 gloze
 glozing
@@ -70097,6 +70145,7 @@ goalee
 goalie
 goalies
 goalkeeper
+goalkeepers
 goalkeeping
 goalless
 goalmouth
@@ -71176,6 +71225,7 @@ graphotypic
 graphy
 graping
 grapnel
+grapnels
 grappa
 grapple
 grappled
@@ -71239,6 +71289,7 @@ grateless
 grateman
 grater
 graters
+grates
 gratewise
 grather
 graticulate
@@ -71591,6 +71642,7 @@ grillage
 grille
 grilled
 griller
+grilles
 grilling
 grillroom
 grills
@@ -72782,6 +72834,7 @@ gyrencephalate
 gyrencephalic
 gyrencephalous
 gyrene
+gyres
 gyrfalcon
 gyrfalcons
 gyri
@@ -72809,7 +72862,9 @@ gyronny
 gyrophoric
 gyropigeon
 gyroplane
+gyros
 gyroscope
+gyroscopes
 gyroscopic
 gyroscopically
 gyroscopics
@@ -73422,6 +73477,8 @@ handballs
 handbank
 handbanker
 handbarrow
+handbell
+handbells
 handbill
 handblow
 handbolt
@@ -74304,6 +74361,7 @@ headstand
 headstick
 headstock
 headstone
+headstones
 headstream
 headstrong
 headstrongly
@@ -74375,6 +74433,7 @@ heartache
 heartaches
 heartaching
 heartbeat
+heartbeats
 heartbird
 heartblood
 heartbreak
@@ -77995,6 +78054,7 @@ hooplike
 hoopmaker
 hoopman
 hoopoe
+hoops
 hoopstick
 hoopwood
 hooray
@@ -78909,9 +78969,12 @@ hurcheon
 hurdies
 hurdis
 hurdle
+hurdled
 hurdleman
 hurdler
+hurdles
 hurdlewise
+hurdling
 hurds
 hure
 hureaulite
@@ -82004,6 +82067,7 @@ impeevish
 impel
 impellent
 impeller
+impellers
 impen
 impend
 impendence
@@ -82248,6 +82312,7 @@ imploring
 imploringly
 imploringness
 implosion
+implosions
 implosive
 implosively
 implume
@@ -91308,6 +91373,7 @@ kneepiece
 knees
 kneestone
 knell
+knells
 knelt
 knet
 knew
@@ -93129,6 +93195,7 @@ latherin
 latheron
 latherwort
 lathery
+lathes
 lathesman
 lathhouse
 lathing
@@ -93189,6 +93256,7 @@ latterness
 lattes
 lattice
 latticed
+lattices
 latticewise
 latticework
 latticing
@@ -93240,6 +93308,7 @@ launce
 launch
 launched
 launcher
+launchers
 launches
 launchful
 launching
@@ -95067,6 +95136,7 @@ lineiform
 lineless
 linelet
 lineman
+linemen
 linen
 linenette
 linenize
@@ -95769,7 +95839,9 @@ lobate
 lobated
 lobately
 lobation
+lobbed
 lobber
+lobbing
 lobbish
 lobby
 lobbyer
@@ -95799,6 +95871,7 @@ lobola
 lobopodium
 lobose
 lobotomy
+lobs
 lobscourse
 lobscouse
 lobscouser
@@ -96041,6 +96114,8 @@ logistical
 logistician
 logistics
 logium
+logjam
+logjams
 loglet
 loglike
 logman
@@ -96934,6 +97009,7 @@ luring
 luringly
 lurk
 lurker
+lurkers
 lurkingly
 lurkingness
 lurky
@@ -101956,6 +102032,7 @@ meteorographic
 meteorography
 meteoroid
 meteoroidal
+meteoroids
 meteorolite
 meteorolitic
 meteorologic
@@ -104285,6 +104362,7 @@ mixedness
 mixen
 mixer
 mixeress
+mixers
 mixhill
 mixible
 mixite
@@ -104861,6 +104939,8 @@ money
 moneyage
 moneybag
 moneybags
+moneybox
+moneyboxes
 moneyed
 moneyer
 moneyflower
@@ -105603,6 +105683,7 @@ moonja
 moonjah
 moonless
 moonlet
+moonlets
 moonlight
 moonlighted
 moonlighter
@@ -116661,10 +116742,12 @@ orbitale
 orbitar
 orbitary
 orbite
+orbited
 orbitelar
 orbitelarian
 orbitele
 orbitelous
+orbiting
 orbitofrontal
 orbitolite
 orbitomalar
@@ -122027,6 +122110,7 @@ palpitant
 palpitate
 palpitatingly
 palpitation
+palpitations
 palpless
 palpocil
 palpon
@@ -122793,6 +122877,7 @@ parablepsy
 parableptic
 parabola
 parabolanus
+parabolas
 parabolic
 parabolical
 parabolicalism
@@ -124710,6 +124795,7 @@ peaky
 peakyish
 peal
 pealike
+peals
 pean
 peanut
 pear
@@ -125085,6 +125171,7 @@ peelers
 peelhouse
 peeling
 peelman
+peels
 peen
 peenge
 peeoy
@@ -129671,6 +129758,8 @@ pileata
 pileate
 pileated
 piled
+piledriver
+piledrivers
 pileiform
 pileolated
 pileolus
@@ -130230,6 +130319,7 @@ piroplasm
 piroplasmosis
 pirouette
 pirouetter
+pirouettes
 pirouettist
 pirr
 pirraura
@@ -130674,6 +130764,7 @@ planetogeny
 planetography
 planetoid
 planetoidal
+planetoids
 planetologic
 planetologist
 planetology
@@ -131746,6 +131837,7 @@ plunderproof
 plunders
 plunge
 plunger
+plungers
 plunging
 plungingly
 plunk
@@ -133862,6 +133954,7 @@ positivity
 positivize
 positor
 positron
+positrons
 positum
 positure
 posnet
@@ -134062,6 +134155,7 @@ posterist
 posterity
 posterize
 postern
+posterns
 posteroclusion
 posterodorsad
 posterodorsal
@@ -140056,6 +140150,7 @@ protonic
 protonickel
 protonitrate
 protonotater
+protons
 protonym
 protonymph
 protonymphal
@@ -141659,19 +141754,23 @@ pulsatile
 pulsatility
 pulsation
 pulsational
+pulsations
 pulsative
 pulsatively
 pulsator
 pulsatory
 pulse
+pulsed
 pulseless
 pulselessly
 pulselessness
 pulselike
 pulsellum
+pulses
 pulsidge
 pulsific
 pulsimeter
+pulsing
 pulsion
 pulsive
 pulsojet
@@ -142380,6 +142479,7 @@ pylephlebitis
 pylethrombosis
 pylic
 pylon
+pylons
 pyloralgia
 pylorectomy
 pyloric
@@ -144056,6 +144156,7 @@ rad
 rada
 radar
 radarman
+radars
 radarscope
 raddle
 raddleman
@@ -144357,6 +144458,7 @@ raiiform
 rail
 railage
 railbird
+railed
 railer
 railhead
 railing
@@ -144374,6 +144476,7 @@ railroading
 railroadish
 railroads
 railroadship
+rails
 railway
 railwaydom
 railwayless
@@ -146886,6 +146989,7 @@ reel
 reelable
 reeled
 reeler
+reeling
 reelingly
 reelrall
 reels
@@ -147394,6 +147498,7 @@ regreet
 regress
 regression
 regressionist
+regressions
 regressive
 regressively
 regressiveness
@@ -147825,6 +147930,7 @@ relapsable
 relapse
 relapseproof
 relapser
+relapses
 relapsing
 relast
 relaster
@@ -149988,12 +150094,14 @@ retread
 retreat
 retreatal
 retreatant
+retreated
 retreater
 retreatful
 retreating
 retreatingness
 retreative
 retreatment
+retreats
 retree
 retrench
 retrenchable
@@ -150326,6 +150434,7 @@ revers
 reversability
 reversable
 reversal
+reversals
 reverse
 reversed
 reversedly
@@ -150557,6 +150666,7 @@ rewiden
 rewin
 rewind
 rewinder
+rewinds
 rewirable
 rewire
 rewish
@@ -151593,6 +151703,7 @@ roadability
 roadable
 roadbed
 roadblock
+roadblocks
 roadbook
 roadcraft
 roaded
@@ -152288,6 +152399,7 @@ rotograph
 rotogravure
 rotor
 rotorcraft
+rotors
 rotproof
 rots
 rottan
@@ -152386,6 +152498,7 @@ rouky
 roulade
 rouleau
 roulette
+roulettes
 roun
 rounce
 rounceval
@@ -152394,6 +152507,7 @@ round
 roundabout
 roundaboutly
 roundaboutness
+roundabouts
 rounded
 roundedly
 roundedness
@@ -154054,6 +154168,7 @@ sandaracin
 sandastros
 sandbag
 sandbagger
+sandbags
 sandbank
 sandbanks
 sandbar
@@ -159377,6 +159492,7 @@ setae
 setal
 setarious
 setback
+setbacks
 setbolt
 setdown
 setfast
@@ -161000,6 +161116,7 @@ shutten
 shutter
 shuttering
 shutterless
+shutters
 shutterwise
 shutting
 shuttle
@@ -161960,6 +162077,7 @@ siphonal
 siphonapterous
 siphonariid
 siphonate
+siphoned
 siphoneous
 siphonet
 siphonia
@@ -161967,6 +162085,7 @@ siphonial
 siphonic
 siphoniferous
 siphoniform
+siphoning
 siphonium
 siphonless
 siphonlike
@@ -161992,6 +162111,7 @@ siphonostely
 siphonostome
 siphonostomous
 siphonozooid
+siphons
 siphonula
 siphorhinal
 siphorhinian
@@ -162595,6 +162715,9 @@ skyplast
 skyre
 skyrgaliard
 skyrocket
+skyrocketed
+skyrocketing
+skyrockets
 skyrockety
 skysail
 skyscape
@@ -162620,6 +162743,7 @@ slabbing
 slabby
 slabman
 slabness
+slabs
 slabstone
 slack
 slackage
@@ -162925,6 +163049,7 @@ slickery
 slicking
 slickly
 slickness
+slicks
 slid
 slidable
 slidableness
@@ -163292,7 +163417,6 @@ slurp
 slurry
 slush
 slusher
-slushes
 slushies
 slushily
 slushiness
@@ -164003,6 +164127,7 @@ snow
 snowball
 snowballs
 snowbank
+snowbanks
 snowbell
 snowberg
 snowberry
@@ -164846,6 +164971,7 @@ sonantic
 sonantina
 sonantized
 sonar
+sonars
 sonata
 sonatas
 sonatina
@@ -166180,6 +166306,7 @@ spheraster
 spheration
 sphere
 sphereless
+spheres
 spheric
 spherical
 sphericality
@@ -166194,6 +166321,7 @@ spherify
 spheroconic
 spherocrystal
 spherograph
+spheroid
 spheroidal
 spheroidally
 spheroidic
@@ -166203,6 +166331,7 @@ spheroidicity
 spheroidism
 spheroidity
 spheroidize
+spheroids
 spheromere
 spherometer
 spheroquartic
@@ -166325,6 +166454,7 @@ spiderling
 spiderly
 spiders
 spiderweb
+spiderwebs
 spiderwork
 spiderwort
 spidery
@@ -166416,6 +166546,7 @@ spindlehead
 spindlelegs
 spindlelike
 spindler
+spindles
 spindleshanks
 spindletail
 spindlewise
@@ -166459,6 +166590,7 @@ spinnable
 spinnaker
 spinner
 spinneret
+spinners
 spinnerular
 spinnerule
 spinnery
@@ -168133,6 +168265,7 @@ stamnos
 stamp
 stampable
 stampage
+stamped
 stampedable
 stampede
 stampeder
@@ -168146,6 +168279,7 @@ stamping
 stample
 stampless
 stampman
+stamps
 stampsman
 stampweed
 stance
@@ -169002,6 +169136,7 @@ stereopsis
 stereoptician
 stereopticon
 stereornithic
+stereos
 stereoscope
 stereoscopic
 stereoscopism
@@ -169709,7 +169844,10 @@ stonesmich
 stonesmitch
 stonesmith
 stonewall
+stonewalled
 stonewaller
+stonewalling
+stonewalls
 stonewally
 stoneware
 stoneweed
@@ -169777,6 +169915,7 @@ stoppage
 stopped
 stopper
 stopperless
+stoppers
 stoppeur
 stopping
 stoppit
@@ -170770,6 +170909,7 @@ stumpless
 stumplike
 stumpling
 stumpnose
+stumps
 stumpwise
 stumpy
 stun
@@ -172651,6 +172791,7 @@ sucker
 suckerel
 suckerfish
 suckerlike
+suckers
 suckfish
 suckhole
 sucking
@@ -173340,6 +173481,7 @@ sunderer
 sunderment
 sunderwise
 sundew
+sundews
 sundial
 sundials
 sundik
@@ -178046,6 +178188,7 @@ teetotally
 teetotum
 teetotumism
 teetotumize
+teetotums
 teetotumwise
 teety
 teevee
@@ -178514,6 +178657,7 @@ temptableness
 temptation
 temptational
 temptationless
+temptations
 temptatious
 temptatory
 tempter
@@ -179292,6 +179436,7 @@ teth
 tethelin
 tether
 tetherball
+tetherballs
 tethered
 tethering
 tethers
@@ -180741,6 +180886,7 @@ thorn
 thornback
 thornbill
 thornbush
+thornbushes
 thorned
 thornen
 thornhead
@@ -180980,9 +181126,12 @@ throatstrap
 throatwort
 throaty
 throb
+throbbed
 throbber
+throbbing
 throbbingly
 throbless
+throbs
 throck
 throdden
 throddy
@@ -181078,6 +181227,7 @@ thrymsa
 thud
 thudding
 thuddingly
+thuds
 thug
 thugdom
 thuggee
@@ -182226,6 +182376,7 @@ tocometer
 tocopherol
 tocororo
 tocsin
+tocsins
 tocusso
 tod
 today
@@ -182431,6 +182582,7 @@ tomboyishness
 tomboyism
 tombs
 tombstone
+tombstones
 tomcat
 tomcats
 tomcod
@@ -183225,6 +183377,7 @@ towards
 towboat
 towcock
 towd
+towed
 towel
 toweled
 towelette
@@ -183253,6 +183406,7 @@ towing
 towkay
 towlike
 towline
+towlines
 towmast
 town
 towned
@@ -183297,6 +183451,8 @@ townwear
 towny
 towpath
 towrope
+towropes
+tows
 towser
 towy
 tox
@@ -183749,6 +183905,7 @@ traject
 trajectile
 trajection
 trajectitious
+trajectories
 trajectory
 trajet
 tralatician
@@ -183798,6 +183955,7 @@ trampoline
 trampolines
 trampoose
 trampot
+tramps
 tramroad
 trams
 tramsmith
@@ -187091,8 +187249,10 @@ turnskin
 turnsole
 turnspit
 turnstile
+turnstiles
 turnstone
 turntable
+turntables
 turntail
 turnup
 turnwrest
@@ -191408,6 +191568,7 @@ undercrypt
 undercup
 undercurl
 undercurrent
+undercurrents
 undercurve
 undercut
 undercutter
@@ -207317,6 +207478,7 @@ wattape
 wattle
 wattlebird
 wattled
+wattles
 wattless
 wattlework
 wattling
@@ -207348,6 +207510,7 @@ waveless
 wavelessly
 wavelessness
 wavelet
+wavelets
 wavelike
 wavellite
 wavemark
@@ -207747,6 +207910,7 @@ weirdsome
 weirdward
 weirdwoman
 weiring
+weirs
 weisbachite
 weiselbergite
 weism
@@ -208360,6 +208524,7 @@ whirry
 whirtle
 whish
 whisk
+whisked
 whisker
 whiskerage
 whiskerando
@@ -208639,6 +208804,7 @@ wicket
 wicketkeep
 wicketkeeper
 wicketkeeping
+wickets
 wicketwork
 wicking
 wickiup
@@ -208889,6 +209055,7 @@ windbore
 windbracing
 windbreak
 windbreaker
+windbreaks
 windbroach
 windchill
 windchills

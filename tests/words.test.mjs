@@ -6,6 +6,10 @@ import { CONCEPTS, CURATED_WORDS, LEXICON } from '../src/words/lexicon/index.js'
 import { pluralize, verbForms } from '../src/words/morph.js';
 import { makeRng } from '../src/core/rng.js';
 import { validateSpec, fingerprint, dps, isAttacker } from './words-helpers.mjs';
+import { EFFECT_TYPES, PATH_ARCHETYPES } from '../src/core/constants.js';
+import { makeEffect, describeEffect } from '../src/words/effects.js';
+import { ARCH_BASE } from '../src/words/build.js';
+import { SAYS } from '../src/words/lexicon/says.js';
 
 const dict = loadDictionaryNode();
 const rng = makeRng(20261111);
@@ -117,10 +121,11 @@ test('curated meanings feel like the word', () => {
     coin: { archetype: 'harvest', resource: 'ink' }, pen: { archetype: 'harvest', resource: 'tile' },
     book: { archetype: 'harvest', resource: 'tile' }, scribe: { archetype: 'harvest', resource: 'tile' },
     fire: { element: 'fire', fx: 'burn' }, ice: { element: 'ice', fx: 'slow' }, poison: { fx: 'poison' },
-    shield: { archetype: 'support', fx: 'shield' }, wall: { archetype: 'support', fx: 'shield' },
-    trap: { fx: 'stun' }, plague: { archetype: 'aura', fx: 'poison' }, sun: { element: 'light' },
+    shield: { archetype: 'support', fx: 'shield' }, wall: { archetype: 'wall' },
+    trap: { archetype: 'trap', fx: 'stun' }, plague: { archetype: 'aura', fx: 'poison' }, sun: { element: 'light' },
     shark: { element: 'water' }, eagle: { archetype: 'snipe' }, bee: { fx: 'poison' }, dragon: { element: 'fire' },
-    ghost: { element: 'shadow' }, wizard: { element: 'arcane' }, drum: { fx: 'buff' }, hospital: { fx: 'heal' },
+    ghost: { element: 'shadow' }, wizard: { element: 'arcane' }, drum: { archetype: 'pulse' }, hospital: { fx: 'heal' },
+    bank: { archetype: 'harvest', fx: 'interest' }, vault: { fx: 'interest' }, hedge: { archetype: 'wall', fx: 'poison' },
   };
   for (const [w, e] of Object.entries(expect)) {
     const s = towerFor(w);
@@ -276,4 +281,111 @@ test('concept collisions do not grow unreviewed', () => {
     else if (first !== c && !!first.kind === !!c.kind) n++;
   }
   assert.ok(n <= 360, `${n} concept collisions (cap 360): review the new ones`);
+});
+
+// ---------------------------------------------------------------- v2: new tower kinds
+const V2 = ['wall', 'trap', 'mortar', 'vortex', 'pulse', 'orbit'];
+
+test('every effect type has a builder and a description (20 incl. interest)', () => {
+  assert.equal(EFFECT_TYPES.length, 20);
+  const ctx = { P: 1, f: 1, L: 3, cost: 30, j: () => 1 };
+  for (const type of EFFECT_TYPES) {
+    const e = makeEffect({ type, sub: null, mult: 1 }, ctx);
+    assert.ok(e && e.type === type, type);
+    assert.ok(describeEffect(e).length > 3, type);
+  }
+  const i = makeEffect({ type: 'interest', mult: 1 }, ctx);
+  assert.ok(i.pct >= 0.03 && i.pct <= 0.15 && Number.isInteger(i.cap) && i.cap >= 5, JSON.stringify(i));
+});
+
+test('v2 archetypes: base stats follow the contract table', () => {
+  for (const a of V2) assert.ok(ARCH_BASE[a], a);
+  assert.ok(Math.abs(ARCH_BASE.wall.hp / ARCH_BASE.bolt.hp - 4) < 0.5, 'wall ≈ 4× a bolt\'s hp');
+  assert.equal(ARCH_BASE.wall.damage, 0);
+  assert.ok(ARCH_BASE.mortar.range >= 4.5 && ARCH_BASE.mortar.minRange >= 1.2 && ARCH_BASE.mortar.splash >= 1);
+  assert.ok(ARCH_BASE.vortex.pull > 0.4 && ARCH_BASE.vortex.pull < 0.8);
+  assert.ok(Math.abs(ARCH_BASE.orbit.range - 1.2) < 0.01);
+  assert.deepEqual(PATH_ARCHETYPES, ['wall', 'trap']);
+});
+
+test('v2 archetypes: contract example words get their kind, with the stats each kind needs', () => {
+  const examples = {
+    wall: 'wall fence gate door dam barricade hedge rampart boulder brick log',
+    trap: 'trap snare net web spike mine pit caltrop tack thorn tar glue',
+    mortar: 'mortar catapult trebuchet volcano meteor comet howitzer',
+    vortex: 'magnet tornado whirlpool gravity hook lasso vacuum undertow',
+    pulse: 'quake roar drum bell thunder stomp shout siren gong',
+    orbit: 'moon planet satellite halo propeller fan wheel shuriken boomerang',
+  };
+  for (const [a, list] of Object.entries(examples)) {
+    for (const w of list.split(' ')) assert.equal(towerFor(w).archetype, a, w);
+  }
+  // inflections and compounds follow their root
+  for (const [w, a] of [['walls', 'wall'], ['traps', 'trap'], ['magnets', 'vortex'], ['moons', 'orbit'], ['drums', 'pulse'], ['catapults', 'mortar']]) {
+    assert.equal(towerFor(w).archetype, a, w);
+  }
+  // required stats, over every word of each kind in a big sample
+  const seen = Object.fromEntries(V2.map((a) => [a, 0]));
+  for (const w of sample5k.concat(Object.values(examples).join(' ').split(' '))) {
+    const s = towerFor(w);
+    if (!(s.archetype in seen)) continue;
+    seen[s.archetype]++;
+    const st = s.stats;
+    assert.deepEqual(validateSpec(s, w, scoreWord), []);
+    if (s.archetype === 'wall') {
+      assert.equal(st.damage, 0, w);
+      assert.ok(st.hp >= (w.length >= 3 ? 180 : 120), `${w} wall hp ${st.hp}`);
+    }
+    if (s.archetype === 'trap') assert.ok(st.damage > 0 && st.rate > 0 && st.rate < 1.5, `${w} ${JSON.stringify(st)}`);
+    if (s.archetype === 'mortar') assert.ok(st.range >= 4 && st.minRange >= 1 && st.minRange < st.range && st.splash >= 0.9, w);
+    if (s.archetype === 'vortex') assert.ok(st.pull > 0 && st.damage > 0, w);
+    if (s.archetype === 'orbit') assert.ok(st.orbs >= 1 && st.orbs <= 4 && st.range > 0.9 && st.range < 1.6, w);
+    if (s.archetype === 'pulse') assert.ok(st.damage > 0 && st.rate > 0, w);
+  }
+  for (const a of V2) assert.ok(seen[a] >= 50, `only ${seen[a]} ${a} specs in the sample`);
+  // walls and traps sit on a path cell: their reach is a fixed contact radius that augments can't stretch
+  assert.equal(towerFor('wall').stats.range, towerFor('rampart').stats.range);
+  assert.equal(towerFor('trap').stats.range, towerFor('caltrop').stats.range);
+  // longer orbit words get more orbs
+  assert.ok(towerFor('propeller').stats.orbs > towerFor('fan').stats.orbs);
+});
+
+test('v2 archetypes: ≥ 60 curated words each', () => {
+  const counts = Object.fromEntries(V2.map((a) => [a, 0]));
+  for (const [, e] of LEXICON) if (!e.tpl.kind && e.tpl.arch in counts) counts[e.tpl.arch]++;
+  for (const a of V2) assert.ok(counts[a] >= 60, `${a}: ${counts[a]} curated words`);
+});
+
+test('interest on money-keeping words', () => {
+  for (const w of ['bank', 'vault', 'safe', 'purse', 'treasury', 'investor', 'banker']) {
+    const s = towerFor(w);
+    assert.equal(s.archetype, 'harvest', w);
+    const i = s.effects.find((e) => e.type === 'interest');
+    assert.ok(i, `${w} lacks interest`);
+    assert.ok(/interest/.test(s.flavor), s.flavor);
+  }
+  assert.ok(!towerFor('coin').effects.some((e) => e.type === 'interest'));
+});
+
+test('variety: short curated words spread over many kinds, with their own flavor', () => {
+  const by = {};
+  let n = 0;
+  for (const [w, e] of LEXICON) {
+    if (w.length > 5 || e.tpl.kind) continue;
+    const a = towerFor(w).archetype;
+    by[a] = (by[a] || 0) + 1;
+    n++;
+  }
+  const kinds = Object.keys(by).filter((a) => by[a] / n >= 0.005);
+  assert.ok(kinds.length >= 15, `only ${kinds.length} kinds among short curated words`);
+  assert.ok((by.support + by.bolt) / n < 0.4, `support+bolt ${(100 * (by.support + by.bolt) / n).toFixed(1)}%`);
+  for (const a of Object.keys(by)) assert.ok(by[a] / n < 0.27, `${a} ${(100 * by[a] / n).toFixed(1)}% of short curated words`);
+  // word-specific flavor: every SAYS word is a curated noun, and its flavor uses its own line
+  for (const [w, say] of Object.entries(SAYS)) {
+    const e = LEXICON.get(w);
+    assert.ok(e && !e.tpl.kind, `${w} is not a curated noun`);
+    assert.ok(towerFor(w).flavor.startsWith(say), w);
+  }
+  assert.match(towerFor('bee').flavor, /^Stings the lead foe/);
+  assert.notEqual(towerFor('bee').flavor.split(';')[0], towerFor('ant').flavor.split(';')[0]);
 });

@@ -4,7 +4,7 @@ export default [
   C('blades', 'bolt', 'metal', 'crit', 'weapon blade metal', '🗡', 'Slashes the nearest foe',
     `sword swords blade blades knife dagger daggers dirk sabre saber sabers scimitar cutlass rapier rapiers katana
  epee foil broadsword longsword shortsword claymore falchion stiletto razor shiv bayonet kris kukri tanto
- cleaver gladius greatsword swordsman swordsmen swordplay fencing duelist duellist swashbuckler blademaster
+ cleaver gladius greatsword swordsman swordsmen swordplay  duelist duellist swashbuckler blademaster
  swordmaster sword  dagger switchblade penknife jackknife pocketknife scythe
  `, { stat: { damage: 1.25, rate: 0.85, range: 0.85 } }),
   C('battleaxes', 'blast', 'metal', 'armorBreak', 'weapon axe metal', '⚔', 'Cleaves through ranks',
@@ -12,7 +12,7 @@ export default [
  warhammer warhammers berserker headsman`, { stat: { damage: 1.1 } }),
   C('spears', 'bolt', 'metal', 'pierce', 'weapon spear metal', '🔱', 'Thrusts spears clean through the line',
     `spear spears lance lances pike pikes javelin javelins trident tridents harpoon harpoons partisan spearhead
- pikeman pikemen lancer lancers spearman spearmen assegai hoplite hoplites phalanx pitchforks spike lancet
+ pikeman pikemen lancer lancers spearman spearmen assegai hoplite hoplites phalanx pitchforks  lancet
  skewer skewers prong prongs impaler
  chisel
  `, { stat: { range: 1.15 } }),
@@ -28,43 +28,43 @@ export default [
  gunfighter gunfighters rifleman riflemen shooter shooters trigger holster pellet pellets buckshot
  birdshot  slugs bandolier gunpoint magnum  luger blaster blasters `),
   C('shotguns', 'blast', 'metal', 'knockback', 'weapon gun metal', '💥', 'Blasts a spread of shot',
-    `shotgun shotguns blunderbuss musketoon bazooka bazookas flamethrower`, { stat: { range: 0.8 } }),
+    `shotgun shotguns blunderbuss musketoon   flamethrower`, { stat: { range: 0.8 } }),
   C('snipers', 'snipe', 'metal', 'crit:1.5', 'weapon gun ranged', '🎯', 'Picks off foes from afar',
     `sniper snipers sharpshooter sharpshooters marksman marksmen markswoman scope scopes riflescope crosshair
  crosshairs deadeye bullseye target targets `),
   C('artillery', 'blast', 'fire', 'knockback', 'weapon artillery siege', '💣', 'Lobs heavy cannonballs down the path',
-    `cannon cannons cannonball cannonballs artillery mortar mortars howitzer howitzers catapult catapults trebuchet
- trebuchets ballista ballistae mangonel onager bombard bombards culverin cannonade cannoneer gunboat
- gunboats shrapnel grapeshot canister barrage bombardment siege siegeworks  batteries broadside
- broadsides artilleryman gunnery
+    `cannon cannons cannonball cannonballs        
+   ballistae     culverin  cannoneer gunboat
+ gunboats shrapnel grapeshot canister    siegeworks  batteries broadside
+ broadsides  gunnery
  arsenal
  `, { stat: { range: 1.15 } }),
   C('explosives', 'blast', 'fire', 'splash burn:0.5', 'weapon explosive fire', '🧨', 'Detonates in a fiery burst',
-    `bomb bombs grenade grenades dynamite explosive explosives explosion explosions blast blasts detonator
- detonation nitro nitroglycerin gunpowder firecracker firecrackers firework fireworks rocket
- rockets missile missiles torpedo torpedoes landmine landmines minefield petard bomber bombers bombshell
- kaboom boom booms warhead warheads payload shell shells napalm incendiary tnt`, { stat: { range: 0.9 } }),
+    `bomb bombs   dynamite explosive explosives explosion explosions blast blasts 
+ detonation nitro nitroglycerin gunpowder firecracker firecrackers   
+    torpedo torpedoes       
+       shell shells napalm  tnt`, { stat: { range: 0.9 } }),
   C('blunt', 'bolt', 'earth', 'stun knockback:0.6', 'weapon blunt', '🏏', 'Clubs foes senseless',
-    `club clubs mace maces flail flails cudgel cudgels bludgeon bludgeons truncheon truncheons baton batons
- cosh shillelagh morningstar knobkerrie quarterstaff quarterstaffs   cane canes stick sticks rod
+    `club clubs mace maces   cudgel cudgels bludgeon bludgeons truncheon truncheons baton batons
+ cosh shillelagh  knobkerrie quarterstaff quarterstaffs   cane canes stick sticks rod
  nightstick blackjack knuckleduster knuckles hammerhead sledge maul mauls bludgeoner
  `),
   C('throwing', 'rapid', 'storm', 'crit:0.6', 'weapon thrown', '🪃', 'Hurls a flurry of throwing weapons',
-    `sling slings slingshot slingshots boomerang boomerangs chakram chakrams shuriken shurikens dart darts
- bola bolas atlatl kunai blowgun blowpipe peashooter slinger slingers`),
+    `sling slings slingshot slingshots       dart darts
+   atlatl kunai blowgun blowpipe peashooter slinger slingers`),
   C('whips', 'chain', 'nature', 'slow:0.7', 'weapon whip', '〰', 'Cracks a whip that snaps between foes',
     `whip whips lash lashes scourge scourges flog bullwhip quirt thong knout lasher`),
   C('shields', 'support', 'metal', 'shield', 'armor defense guard', '🛡', 'Raises shields over nearby towers',
     `shield shields buckler bucklers aegis armor armour armors armours breastplate breastplates chainmail 
  helmet helmets helm helms visor visors gauntlet gauntlets greaves hauberk cuirass pavise targe targes
- shieldwall bulwark bulwarks plating kevlar brigandine gorget pauldron vambrace
+ shieldwall   plating kevlar brigandine gorget pauldron vambrace
  coif chainmaille scale
- lid
+ 
  `),
   C('war', 'aura', 'fire', 'crit:0.6', 'war military', '⚔', 'Engulfs nearby foes in the chaos of battle',
     `war wars warfare battle battles combat conflict fight fights fighting skirmish skirmishes clash clashes
  onslaught assault assaults offensive invasion invasions crusade crusades siegecraft melee brawl brawls
- fray affray scuffle tussle struggle campaign blitz blitzkrieg battlefield battlefields battleground
+ fray affray scuffle tussle struggle campaign   battlefield battlefields battleground
  warpath bloodbath carnage havoc mayhem rampage
  warmonger duel joust`),
 ];

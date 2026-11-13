@@ -3,6 +3,8 @@ const list = (s) => s.trim().split(/\s+/);
 
 export const POS_EXTRA = {
   verb: list(`
+ retreat backtrack backlash skyrocket pulse orbit tow reel dam stamp ping throb funnel
+ siphon whisk lob wall fence barricade blockade buttress hurdle rail plug cork brick stonewall wheel
  ax axe saw chop hew fell log harvest plow plough hoe rake reap mill farm crop pick mine quarry shovel
  dig drill dredge hammer forge smith hone file rasp wrench screw nail glue tape rivet solder weld tinker
  fix mend patch clamp jack lever winch fish angle bait lure hook trawl net lock latch bolt key bag sack

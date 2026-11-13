@@ -27,6 +27,7 @@ function meaningFor(w) {
       tpl: e.tpl,
       augTpl: e.aug || null,
       modTpl: r.mod ? r.mod.tpl : null,
+      say: e.say || null,
       twists: r.twists,
       pos,
       tagPerson: !!r.tagPerson,

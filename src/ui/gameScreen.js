@@ -1,10 +1,11 @@
 // Game screen: board canvas, word entry, HUD, tray, loop.
-import { DEFAULTS, LETTER_VALUES } from '../core/constants.js';
+import { DEFAULTS, LETTER_VALUES, PATH_ARCHETYPES } from '../core/constants.js';
 import { h, clear, setText } from './dom.js';
 import { createRenderer, biomeFor } from './renderer.js';
 import { createFx } from './fx.js';
 import { towerCard, towerInspect } from './card.js';
-import { ruleText, ENEMY_INFO, ENEMY_NOTES, waveCounts } from './describe.js';
+import { ruleText, ENEMY_INFO, ENEMY_NOTES, waveCounts, archetypeIcon, archetypeInfo } from './describe.js';
+import { rewardModal, renderInventory, enemyIntro, letterLine } from './rewards.js';
 import { enemyIcon, towerName, elementColor } from './sprites.js';
 import { createCoach } from './onboarding.js';
 import { resultModal } from './screens.js';
@@ -14,13 +15,12 @@ import { resultModal } from './screens.js';
  *         dictionary, levelNo, save, nav: { levels(), level(n), dictionary(onClose) } }
  */
 export function createGameScreen(root, opts) {
-  const { mods, dictionary, levelNo, save, nav } = opts;
+  const { mods, dictionary, levelNo, save, nav, hinter } = opts;
   const level = mods.levelFor(levelNo);
   const game = mods.createGame({
     level, dictionary, towerFor: mods.towerFor, checkWordRules: mods.checkWordRules, themeBonus: mods.themeBonus,
   });
   const state = game.state;
-  const rackSize = level.rackSize || state.rack.length || DEFAULTS.rackSize;
 
   /* ------------------------------------------------------------------ DOM */
   const canvas = h('canvas', { class: 'board', 'aria-label': 'Game board' });
@@ -36,9 +36,11 @@ export function createGameScreen(root, opts) {
   const btnSubmit = h('button', { class: 'pill primary submit' }, 'SUBMIT WORD');
   const compose = h('div', { class: 'compose', hidden: true }, composeTiles, composeStatus, btnSubmit);
   const toast = h('div', { class: 'toast', role: 'status', 'aria-live': 'polite' });
+  const rewardPill = h('button', { class: 'pill primary small reward-pill', hidden: true, title: 'Reopen the reward choice' }, 'CHOOSE YOUR REWARD');
+  const boardTop = h('div', { class: 'board-top' }, rewardPill);
   const veil = h('div', { class: 'veil', hidden: true }, h('div', { class: 'veil-card' }, h('div', { class: 'veil-title' }, 'PAUSED'),
     h('button', { class: 'pill primary', onclick: () => setPaused(false) }, 'RESUME')));
-  const boardArea = h('div', { class: 'board-area' }, canvas, lvlBlock, hudTR, sideCard, compose, toast, veil);
+  const boardArea = h('div', { class: 'board-area' }, canvas, lvlBlock, hudTR, boardTop, sideCard, compose, toast, veil);
 
   // tray
   const inkVal = h('span', { class: 'v' });
@@ -49,19 +51,20 @@ export function createGameScreen(root, opts) {
     h('div', { class: 'res-ink' }, h('div', { class: 'bar' }, inkFill, h('div', { class: 'bar-label' }, 'Ink: ', inkVal))),
     h('div', { class: 'res-row' }, h('span', { class: 'k' }, 'Lives'), livesVal),
     h('div', { class: 'res-row' }, h('span', { class: 'k' }, 'Wave'), waveVal));
-  const tInv = h('section', { class: 't-inv' }, h('h4', null, 'Inventory'),
-    h('div', { class: 'inv-slots' }, [0, 1, 2].map(() => h('div', { class: 'inv-slot' }))),
-    h('div', { class: 'inv-note' }, 'Relics will live here'));
+  const invBody = h('div', { class: 'inv-body' });
+  const tInv = h('section', { class: 't-inv' }, h('h4', null, 'Inventory'), invBody);
   const btnReroll = h('button', { class: 'pill outline small', title: 'Replace every tile in your rack' }, 'REROLL');
   const btnShuffle = h('button', { class: 'pill outline small' }, 'SHUFFLE');
   const btnAlpha = h('button', { class: 'pill outline small' }, 'ALPHABETIZE');
   const btnEmpty = h('button', { class: 'pill outline small', title: 'Clear the word (Esc)' }, 'EMPTY');
+  const btnHint = h('button', { class: 'pill outline small hint-btn', title: 'Suggest words from your rack (?)' }, 'HINT');
   const btnDict = h('button', { class: 'pill slate small', title: 'Every word you have played' }, 'DICTIONARY');
+  const hintRow = h('div', { class: 'hint-chips', hidden: true });
   const rackEl = h('div', { class: 'rack', role: 'group', 'aria-label': 'Your letter tiles' });
   const rackHint = h('div', { class: 'rack-hint' }, 'Type a word from your tiles · Press enter to make word');
   const tRack = h('section', { class: 't-rack' },
-    h('div', { class: 'rack-btns' }, btnReroll, btnShuffle, btnAlpha, btnEmpty, h('span', { class: 'flex' }), btnDict),
-    rackEl, rackHint);
+    h('div', { class: 'rack-btns' }, btnReroll, btnShuffle, btnAlpha, btnEmpty, btnHint, h('span', { class: 'flex' }), btnDict),
+    rackEl, hintRow, rackHint);
   const dmgList = h('ol', { class: 'dmg-list' });
   const tDmg = h('section', { class: 't-dmg' }, h('h4', null, 'Damage'), dmgList);
   const tray = h('footer', { class: 'tray' }, tRes, tInv, tRack, tDmg);
@@ -111,6 +114,10 @@ export function createGameScreen(root, opts) {
       h('div', { class: 'next-wave' }));
   }
   buildLevelBlock();
+  // Collapses to one line so it never sits over the top-left cells; hover to read the rules.
+  const collapseLevel = (c) => lvlBlock.classList.toggle('collapsed', c);
+  lvlBlock.addEventListener('mouseenter', () => collapseLevel(false));
+  lvlBlock.addEventListener('mouseleave', () => collapseLevel(true));
   let waveKey = '';
   function updateWavePreview() {
     const el = lvlBlock.querySelector('.next-wave');
@@ -172,8 +179,39 @@ export function createGameScreen(root, opts) {
 
   function tileEl(ch, cls, onclick, data) {
     const val = LETTER_VALUES[ch] ?? '';
-    return h('button', { class: cls, onclick, dataset: data ? { idx: String(data.idx) } : null, 'aria-label': ch.toUpperCase() },
-      h('span', { class: 'l' }, ch.toUpperCase()), h('span', { class: 'n' }, String(val)));
+    const tier = state.letterTiers?.[ch] || 0;
+    const bonus = tier ? letterBonus(ch) : null;
+    return h('button', { class: cls + (tier >= 2 ? ' gold' : tier ? ' silver' : ''), onclick, dataset: data ? { idx: String(data.idx) } : null,
+      'aria-label': ch.toUpperCase(), title: bonus ? bonus.text || `${tier >= 2 ? 'Gold' : 'Silver'} ${ch.toUpperCase()}: ${bonus.kind}` : null },
+    h('span', { class: 'l' }, ch.toUpperCase()), h('span', { class: 'n' }, String(val)));
+  }
+
+  function letterBonus(ch) {
+    try { return game.letterBonus?.(ch) || null; } catch { return null; }
+  }
+
+  /** Letter-upgrade bonuses a new tower of word w would get. */
+  function letterBonusesFor(w) {
+    const tiers = state.letterTiers;
+    if (!tiers) return null;
+    const counts = new Map();
+    for (const ch of w) if (tiers[ch] > 0) counts.set(ch, (counts.get(ch) || 0) + 1);
+    return [...counts].map(([ch, n]) => ({ letter: ch, tier: tiers[ch], count: n, text: letterLine(letterBonus(ch)?.kind, tiers[ch]) }));
+  }
+
+  /** Put a whole word into the composer (hint chips). */
+  function composeWord(w) {
+    const next = [];
+    for (const ch of w) {
+      const i = order.find((j) => state.rack[j] === ch && !next.includes(j));
+      if (i == null) { showToast(`No ${ch.toUpperCase()} left in your rack`, 'warn'); return; }
+      next.push(i);
+    }
+    composed = next;
+    armed = false;
+    selectedId = null;
+    renderRack();
+    onWordChanged();
   }
 
   function addIndex(idx) {
@@ -233,8 +271,35 @@ export function createGameScreen(root, opts) {
       }
       composed = next;
     }
+    hideHints();
     renderRack();
     onWordChanged();
+  }
+
+  /* ----------------------------------------------------------------- hints */
+  function hideHints() { hintRow.hidden = true; rackHint.hidden = composed.length > 0; }
+
+  function showHints() {
+    if (!hintRow.hidden) { hideHints(); return; }
+    const hk = hinter?.();
+    if (!hk) { showToast('Hints are not available yet', 'warn'); return; }
+    let list = [];
+    try { list = hk.suggestWords(game, hk.finder, 3) || []; } catch (err) { console.warn('hints', err); }
+    clear(hintRow);
+    if (!list.length) hintRow.append(h('span', { class: 'hint-empty' }, 'No good words — try REROLL'));
+    for (const sg of list) {
+      const sp = sg.spec || {};
+      const aug = sg.use === 'augment';
+      const target = aug && sg.towerId != null ? towerById(sg.towerId) : null;
+      const cost = aug ? sp.augment?.cost : sp.cost;
+      const info = archetypeInfo(sp.archetype);
+      hintRow.append(h('button', { class: 'hint-chip', title: aug ? `Power up ${target ? towerName(target) : 'a tower'}` : `${info.name}: ${info.desc}`, onclick: () => composeWord(sg.word) },
+        h('b', null, sg.word.toUpperCase()), h('i', null, '·'),
+        aug ? h('span', { class: 'hc-aug' }, `augment → ${target ? towerName(target) : 'TOWER'}`) : h('span', { class: 'hc-arch' }, archetypeIcon(sp.archetype)),
+        h('i', null, '·'), h('span', { class: 'hc-cost' }, `${cost ?? '?'} ink`)));
+    }
+    hintRow.hidden = false;
+    rackHint.hidden = true;
   }
 
   /* ------------------------------------------------------------ validation */
@@ -252,6 +317,7 @@ export function createGameScreen(root, opts) {
     updateSide(true);
     buildable = null; buildTimer = 0;
     if (check?.ok) coach?.signal('validWord');
+    if (composed.length) collapseLevel(true);
   }
 
   function updateStatus() {
@@ -263,17 +329,18 @@ export function createGameScreen(root, opts) {
     else {
       const s = check.spec;
       const tw = !!check.canTower, aug = !!check.canAugment;
+      const spot = PATH_ARCHETYPES.includes(s.archetype) ? 'a path cell' : 'a spot beside the path';
       if (!tw && !aug) { txt = check.towerReason || check.augmentReason || "Can't be used right now"; cls = 'warn'; }
-      else if (!armed) { txt = tw && aug ? 'Press Enter, then click a spot to build or a tower to power up' : tw ? 'Press Enter, then click a spot beside the path' : 'Press Enter, then click a tower to power it up'; cls = 'ok'; }
-      else if (tw && aug) { txt = `Click a spot to build (${s.cost} ink) or a tower to augment (${s.augment.cost} ink)`; cls = 'ok'; }
-      else if (tw) { txt = `Click a free spot to build · ${s.cost} ink`; cls = 'ok'; }
+      else if (!armed) { txt = tw && aug ? `Press Enter, then click ${spot} to build or a tower to power up` : tw ? `Press Enter, then click ${spot}` : 'Press Enter, then click a tower to power it up'; cls = 'ok'; }
+      else if (tw && aug) { txt = `Click ${spot} to build (${s.cost} ink) or a tower to augment (${s.augment.cost} ink)`; cls = 'ok'; }
+      else if (tw) { txt = `Click ${spot} to build · ${s.cost} ink`; cls = 'ok'; }
       else { txt = `Click a tower to augment · ${s.augment.cost} ink`; cls = 'ok'; }
     }
     setText(composeStatus, txt);
     composeStatus.className = 'compose-status ' + cls;
     btnSubmit.disabled = !(check?.ok);
     setText(btnSubmit, armed ? 'READY — CLICK THE MAP' : 'SUBMIT WORD');
-    rackHint.hidden = composed.length > 0;
+    rackHint.hidden = composed.length > 0 || !hintRow.hidden;
   }
 
   function submit() {
@@ -298,8 +365,8 @@ export function createGameScreen(root, opts) {
     // No preview for non-words: the engine returns a spec for any letters, which reads as "this would work".
     if (w.length >= 2 && spec && dictionary.has(w)) {
       const afford = spec.cost <= state.ink;
-      key = `w|${w}|${check?.ok}|${afford}|${Math.floor(state.ink / 5)}`;
-      build = () => towerCard(spec, { ink: state.ink, themeMul: safeTheme(spec) });
+      key = `w|${w}|${check?.ok}|${afford}|${Math.floor(state.ink / 5)}|${JSON.stringify(state.letterTiers || '')}`;
+      build = () => towerCard(spec, { ink: state.ink, themeMul: safeTheme(spec), letterBonuses: letterBonusesFor(w) });
     } else if (selectedId != null && towerById(selectedId)) {
       const tw = towerById(selectedId);
       key = `t|${tw.id}|${Math.ceil(tw.hp)}|${tw.kills}|${Math.round((tw.damageDealt || 0) / 25)}|${tw.augments.length}|${tw.disabled}`;
@@ -392,9 +459,64 @@ export function createGameScreen(root, opts) {
 
   function startWave() {
     if (state.phase !== 'build') return;
+    if (state.reward) { setRewardHidden(false); showToast('Choose your reward before the next wave', 'warn', 2200); return; }
     const r = game.startWave();
     if (r && r.ok === false) { showToast(r.reason || "Can't start", 'bad'); return; }
     coach?.signal('waveStarted');
+    collapseLevel(true);
+  }
+
+  /* --------------------------------------------------------------- rewards */
+  let rewardEl = null, rewardKey = '', rewardHidden = false;
+  const rerolled = new Set();
+  function syncReward() {
+    const r = state.reward || null;
+    const key = r ? JSON.stringify([r.kind, r.options, r.rerolls, state.rack]) : '';
+    if (key === rewardKey) return;
+    if (!rewardKey && key) { rewardHidden = false; rerolled.clear(); }
+    rewardKey = key;
+    const was = !!rewardEl;
+    rewardEl?.remove(); rewardEl = null;
+    if (r) {
+      rewardEl = rewardModal(r, {
+        game, RELICS: mods.RELICS, rerolled,
+        onTake: (i) => rewardAct(game.chooseReward?.(i), true),
+        onReroll: (i) => { if (rewardAct(game.rerollReward?.(i))) rerolled.add(i); syncReward(); },
+        onHide: () => setRewardHidden(true),
+      });
+      if (was) rewardEl.classList.add('still'); // a reroll redraws in place, no entry animation
+      boardArea.appendChild(rewardEl);
+      if (!was) rewardEl.querySelector('.take')?.focus({ preventScroll: true });
+    }
+    setRewardHidden(rewardHidden);
+  }
+  function rewardAct(res, taken) {
+    if (!res?.ok) { showToast(res?.reason || "That didn't work", 'bad'); return false; }
+    if (taken) { syncReward(); renderRack(); sideKey = ''; updateSide(true); }
+    return true;
+  }
+  function setRewardHidden(hd) {
+    rewardHidden = hd;
+    if (rewardEl) rewardEl.hidden = hd;
+    rewardPill.hidden = !rewardEl || !hd;
+  }
+  rewardPill.onclick = () => setRewardHidden(false);
+
+  /* ----------------------------------------------------------- new enemies */
+  // grunt is the baseline enemy (level 1), not worth an intro card
+  const introAt = new Map((level.newEnemies || []).filter((type) => type !== 'grunt').map((type) => [type, (level.waves || []).findIndex((w) => waveCounts(w).has(type))]));
+  let intro = null; // { type, idx, el }
+  function updateIntro() {
+    if (intro && (state.waveIndex > intro.idx || state.phase === 'won' || state.phase === 'lost')) { intro.el.remove(); intro = null; }
+    if (intro || state.phase === 'won' || state.phase === 'lost') return;
+    for (const [type, idx] of introAt) {
+      if (idx !== state.waveIndex) continue;
+      introAt.delete(type);
+      const el = enemyIntro(type, () => { el.remove(); if (intro?.el === el) intro = null; });
+      intro = { type, idx, el };
+      boardTop.appendChild(el);
+      break;
+    }
   }
 
   function setPaused(p) {
@@ -424,6 +546,7 @@ export function createGameScreen(root, opts) {
   btnShuffle.onclick = () => { game.shuffleRack(); order = [...Array(state.rack.length).keys()]; onRackChanged(); };
   btnAlpha.onclick = () => { order = [...Array(state.rack.length).keys()].sort((a, b) => (state.rack[a] || '~').localeCompare(state.rack[b] || '~') || a - b); renderRack(); };
   btnEmpty.onclick = clearWord;
+  btnHint.onclick = showHints;
   btnDict.onclick = () => {
     const wasPaused = paused;
     setPaused(true);
@@ -441,6 +564,8 @@ export function createGameScreen(root, opts) {
     if (e.repeat && k !== 'Backspace') return;
     if (k === 'P' && e.shiftKey) { e.preventDefault(); setPaused(!paused); return; }
     if (paused) { if (k === 'Escape' || k === ' ') { e.preventDefault(); setPaused(false); } return; }
+    if (rewardEl && !rewardHidden) { if (k === 'Escape') { e.preventDefault(); setRewardHidden(true); } return; }
+    if (k === '?') { e.preventDefault(); showHints(); return; }
     if (/^[a-zA-Z]$/.test(k)) { e.preventDefault(); addLetter(k.toLowerCase()); return; }
     if (k === 'Backspace') { e.preventDefault(); if (composed.length) removeAt(composed.length - 1); return; }
     if (k === 'Escape') {
@@ -457,9 +582,10 @@ export function createGameScreen(root, opts) {
 
   function onMove(e) {
     hover = renderer.cellAt(e.clientX, e.clientY);
-    canvas.style.cursor = hover && (towerAtCell(hover.cx, hover.cy) || (check?.ok && game.canBuild(hover.cx, hover.cy))) ? 'pointer' : 'default';
+    canvas.style.cursor = hover && (towerAtCell(hover.cx, hover.cy) || (check?.ok && canBuildHere(hover.cx, hover.cy))) ? 'pointer' : 'default';
   }
   function onLeave() { hover = null; }
+  const canBuildHere = (cx, cy) => game.canBuild(cx, cy, spec?.archetype);
   function onClick(e) {
     if (paused || resultShown) return;
     const cell = renderer.cellAt(e.clientX, e.clientY);
@@ -516,12 +642,16 @@ export function createGameScreen(root, opts) {
     setText(waveVal, `${wn} / ${state.waveCount}`);
     const building = state.phase === 'build';
     btnWave.disabled = !building;
-    setText(btnWave, building ? (state.waveIndex === 0 ? 'START WAVE' : `START WAVE ${state.waveIndex + 1}`) : state.phase === 'wave' ? `WAVE ${state.waveIndex + 1} IN PROGRESS` : 'DONE');
+    setText(btnWave, building ? (state.reward ? 'CHOOSE REWARD' : state.waveIndex === 0 ? 'START WAVE' : `START WAVE ${state.waveIndex + 1}`) : state.phase === 'wave' ? `WAVE ${state.waveIndex + 1} IN PROGRESS` : 'DONE');
+    const relics = state.relics || [];
+    if (relics.join() !== invKey) { invKey = relics.join(); renderInventory(invBody, relics, mods.RELICS); }
+    updateIntro();
     setText(btnReroll, state.freeRedraws > 0 ? `REROLL (FREE ×${state.freeRedraws})` : `REROLL (${state.redrawCost})`);
     btnReroll.classList.toggle('short', !(state.freeRedraws > 0) && state.ink < state.redrawCost);
     updateWavePreview();
   }
 
+  let invKey = null;
   function updateDamage() {
     if (dmgList.matches(':hover')) return;
     const rows = state.towers.slice().sort((a, b) => (b.damageDealt ?? b.kills ?? 0) - (a.damageDealt ?? a.kills ?? 0)).slice(0, 6);
@@ -564,12 +694,14 @@ export function createGameScreen(root, opts) {
     for (const ev of events) {
       try { fx.handle(ev, look); } catch (err) { console.warn('fx', err); }
       if (ev.type === 'towerSold' && ev.towerId === selectedId) selectedId = null;
+      if (ev.type === 'reward') { rewardKey = ''; rewardEl?.remove(); rewardEl = null; }
     }
     if (state.rack.join('') !== rackSnap) onRackChanged();
 
     checkTimer += dt; sideTimer += dt; dmgTimer += dt; buildTimer -= dt;
     if (checkTimer > 0.3) { checkTimer = 0; if (composed.length) { runCheck(); updateStatus(); } }
     if (sideTimer > 0.25) { sideTimer = 0; updateSide(); }
+    syncReward();
     if (dmgTimer > 0.5) { dmgTimer = 0; updateDamage(); }
 
     // ghost / targets
@@ -589,13 +721,13 @@ export function createGameScreen(root, opts) {
             ghost = { mode: 'augment', targetId: tw.id, spec: s, ok: !full && !poor, reason: full ? 'Tower is full' : poor ? (check.augmentReason || `Need ${s.augment.cost} ink`) : '' };
           } else rangeTower = tw;
         } else {
-          ghost = { mode: 'tower', cx: hover.cx, cy: hover.cy, spec: s, ok: game.canBuild(hover.cx, hover.cy) && !!check.canTower, reason: check.towerReason };
+          ghost = { mode: 'tower', cx: hover.cx, cy: hover.cy, spec: s, ok: canBuildHere(hover.cx, hover.cy) && !!check.canTower, reason: check.towerReason };
         }
       }
       if (buildTimer <= 0) {
         buildTimer = 0.5;
         buildable = [];
-        for (let y = 0; y < (level.rows || 10); y++) for (let x = 0; x < (level.cols || 16); x++) if (game.canBuild(x, y)) buildable.push([x, y]);
+        for (let y = 0; y < (level.rows || 10); y++) for (let x = 0; x < (level.cols || 16); x++) if (canBuildHere(x, y)) buildable.push([x, y]);
       }
     } else {
       buildable = null;

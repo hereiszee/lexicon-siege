@@ -29,7 +29,17 @@ export const ARCHETYPES = [
   'support', // no attack; affects towers in range (heal / buff / shield)
   'harvest', // no attack; produces ink or letter tiles
   'summon',  // spawns defender units onto the path
+  // v2 (see CONTRACT.md "v2"):
+  'wall',    // placed ON a path cell; blocks walkers, who stop and bite it; no attack
+  'trap',    // placed ON a path cell; walkers pass over it; hits everything on its cell, rearms at stats.rate
+  'mortar',  // very long range, can't hit inside stats.minRange; slow lobbed shell with big splash
+  'vortex',  // drags walkers in range backwards along the path at stats.pull cells/s, plus DPS
+  'pulse',   // every 1/rate s a shockwave hits ALL enemies in range once (burst, unlike aura's DoT)
+  'orbit',   // stats.orbs orbs circle the tower at radius stats.range, hitting what they touch
 ];
+
+/** Archetypes that are placed on path cells instead of beside them. */
+export const PATH_ARCHETYPES = ['wall', 'trap'];
 
 /**
  * Effect objects: { type, ...params }. Durations in seconds, distances in cells.
@@ -49,10 +59,11 @@ export const ARCHETYPES = [
  *   shield {amount,interval}     (grants towers in range a damage shield)
  *   harvest {resource:'ink'|'tile', amount, interval}
  *   summon {hp,damage,count,interval}          (damage is DPS of each unit)
+ *   interest {pct,cap}           (v2: at each wave end gain floor(ink × pct), at most cap)
  */
 export const EFFECT_TYPES = [
   'burn', 'poison', 'slow', 'freeze', 'stun', 'pierce', 'chain', 'splash', 'crit', 'execute',
-  'armorBreak', 'knockback', 'bounty', 'reveal', 'heal', 'buff', 'shield', 'harvest', 'summon',
+  'armorBreak', 'knockback', 'bounty', 'reveal', 'heal', 'buff', 'shield', 'harvest', 'summon', 'interest',
 ];
 
 export const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
@@ -77,17 +88,19 @@ export const VOWELS = 'aeiou';
  * traits are implemented by the engine.
  */
 export const ENEMIES = {
-  grunt:    { hp: 20,  speed: 1.2, armor: 0, bounty: 3,  leak: 1,  traits: [] },
-  runner:   { hp: 10,  speed: 2.4, armor: 0, bounty: 3,  leak: 1,  traits: [] },
-  swarm:    { hp: 5,   speed: 1.6, armor: 0, bounty: 1,  leak: 1,  traits: [] },
-  tank:     { hp: 80,  speed: 0.7, armor: 2, bounty: 8,  leak: 2,  traits: [] },
-  armored:  { hp: 40,  speed: 1.0, armor: 5, bounty: 6,  leak: 1,  traits: [] },
-  stealth:  { hp: 15,  speed: 1.5, armor: 0, bounty: 5,  leak: 1,  traits: ['stealth'] },   // untargetable unless revealed or within 1.5 cells of a tower
-  healer:   { hp: 30,  speed: 1.0, armor: 0, bounty: 6,  leak: 1,  traits: ['healer'] },    // heals enemies within 1.5 cells, 4 hp/s
-  vandal:   { hp: 35,  speed: 1.0, armor: 0, bounty: 6,  leak: 1,  traits: ['vandal'] },    // deals 5 dps to nearest tower within 1.5 cells
-  splitter: { hp: 30,  speed: 1.0, armor: 0, bounty: 4,  leak: 1,  traits: ['splitter'] },  // spawns 3 swarm on death
-  flyer:    { hp: 14,  speed: 1.8, armor: 0, bounty: 4,  leak: 1,  traits: ['flyer'] },     // ignores summoned units
-  boss:     { hp: 600, speed: 0.5, armor: 3, bounty: 60, leak: 10, traits: ['boss'] },      // immune to execute/freeze/knockback
+  // bite = DPS dealt to a wall / summoned unit blocking it (v2)
+  grunt:    { hp: 20,  speed: 1.2, armor: 0, bounty: 3,  leak: 1,  bite: 4,  traits: [] },
+  runner:   { hp: 10,  speed: 2.4, armor: 0, bounty: 3,  leak: 1,  bite: 2,  traits: [] },
+  swarm:    { hp: 5,   speed: 1.6, armor: 0, bounty: 1,  leak: 1,  bite: 1,  traits: [] },
+  tank:     { hp: 80,  speed: 0.7, armor: 2, bounty: 8,  leak: 2,  bite: 10, traits: [] },
+  armored:  { hp: 40,  speed: 1.0, armor: 5, bounty: 6,  leak: 1,  bite: 6,  traits: [] },
+  stealth:  { hp: 15,  speed: 1.5, armor: 0, bounty: 5,  leak: 1,  bite: 3,  traits: ['stealth'] },   // untargetable unless revealed or within 1.5 cells of a tower
+  healer:   { hp: 30,  speed: 1.0, armor: 0, bounty: 6,  leak: 1,  bite: 2,  traits: ['healer'] },    // heals enemies within 1.5 cells, 4 hp/s
+  vandal:   { hp: 35,  speed: 1.0, armor: 0, bounty: 6,  leak: 1,  bite: 8,  traits: ['vandal'] },    // deals 5 dps to nearest tower within 1.5 cells
+  slinger:  { hp: 22,  speed: 1.0, armor: 0, bounty: 5,  leak: 1,  bite: 3,  traits: ['slinger'] },   // v2: every 2 s shoots the nearest tower within 2.5 cells for 6 damage
+  splitter: { hp: 30,  speed: 1.0, armor: 0, bounty: 4,  leak: 1,  bite: 4,  traits: ['splitter'] },  // spawns 3 swarm on death
+  flyer:    { hp: 14,  speed: 1.8, armor: 0, bounty: 4,  leak: 1,  bite: 0,  traits: ['flyer'] },     // ignores walls, traps and summoned units
+  boss:     { hp: 600, speed: 0.5, armor: 3, bounty: 60, leak: 10, bite: 30, traits: ['boss', 'stomp'] }, // immune to execute/freeze/knockback (pull at 25%); v2 stomp: every 4 s, 20 damage to every tower within 1.5 cells
 };
 
 export const DEFAULTS = {

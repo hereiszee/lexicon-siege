@@ -3,7 +3,7 @@
 
 export const ON_HIT = new Set(['burn', 'poison', 'slow', 'freeze', 'stun', 'pierce', 'chain', 'splash', 'crit',
   'execute', 'armorBreak', 'knockback', 'bounty', 'reveal']);
-export const PASSIVE = new Set(['heal', 'buff', 'shield', 'harvest', 'summon']);
+export const PASSIVE = new Set(['heal', 'buff', 'shield', 'harvest', 'summon', 'interest']);
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 export const r2 = (v) => Math.round(v * 100) / 100;
@@ -56,6 +56,11 @@ export function makeEffect(t, ctx) {
         interval: r1(clamp(10 * j(), 7, 14)),
       };
     }
+    case 'interest': return {
+      type: 'interest',
+      pct: r2(clamp((0.04 + 0.02 * g) * j(), 0.03, 0.15)),
+      cap: Math.max(5, Math.round(0.4 * ctx.cost * m * j())),
+    };
     default: return null;
   }
 }
@@ -85,6 +90,7 @@ export function describeEffect(e) {
     case 'harvest': return e.resource === 'tile'
       ? `grants a free rack redraw every ${Math.round(e.interval)}s`
       : `yields +${e.amount} ink every ${e.interval}s`;
+    case 'interest': return `earns ${Math.round(e.pct * 100)}% interest on your ink each wave (max ${e.cap})`;
     case 'summon': return `sends ${e.count} defender${e.count > 1 ? 's' : ''} onto the path every ${Math.round(e.interval)}s`;
     default: return '';
   }

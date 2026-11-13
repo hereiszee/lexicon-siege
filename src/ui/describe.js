@@ -12,7 +12,16 @@ export const ARCHETYPE_INFO = {
   support: { name: 'Support', desc: 'Does not attack. Helps towers in range.' },
   harvest: { name: 'Harvest', desc: 'Does not attack. Gathers ink or tiles.' },
   summon:  { name: 'Summon',  desc: 'Sends defenders out to block the path.' },
+  wall:    { name: 'Wall',    desc: 'Built ON the path. Walkers stop and chew on it instead of moving. Does not attack.', icon: '▦' },
+  trap:    { name: 'Trap',    desc: 'Built ON the path. Snaps shut on everything standing on it, then re-arms. Flyers pass over.', icon: '✕' },
+  mortar:  { name: 'Mortar',  desc: 'Lobs slow shells far across the map for a big blast. Cannot hit enemies right next to it.', icon: '⌒' },
+  vortex:  { name: 'Vortex',  desc: 'Drags enemies in range backwards along the path while wearing them down.', icon: '@' },
+  pulse:   { name: 'Pulse',   desc: 'Sends out a shockwave that hits every enemy in range at once.', icon: '◉' },
+  orbit:   { name: 'Orbit',   desc: 'Orbs circle the tower and strike whatever they touch.', icon: '⊙' },
 };
+// small glyphs for hint chips
+const ARCH_ICONS = { bolt: '➶', blast: '✹', snipe: '⌖', rapid: '⁘', beam: '━', chain: 'ϟ', aura: '◎', support: '✚', harvest: '❦', summon: '♟' };
+export function archetypeIcon(a) { return ARCHETYPE_INFO[a]?.icon || ARCH_ICONS[a] || '•'; }
 
 export function archetypeInfo(a) {
   return ARCHETYPE_INFO[a] || { name: cap(a || 'tower'), desc: '' };
@@ -24,7 +33,7 @@ export const RARITY_COLORS = {
 
 export const ENEMY_INFO = {
   grunt: 'Grunt', runner: 'Runner', swarm: 'Swarm', tank: 'Tank', armored: 'Armored',
-  stealth: 'Stealth', healer: 'Healer', vandal: 'Vandal', splitter: 'Splitter', flyer: 'Flyer', boss: 'Boss',
+  stealth: 'Stealth', healer: 'Healer', vandal: 'Vandal', slinger: 'Slinger', splitter: 'Splitter', flyer: 'Flyer', boss: 'Boss',
 };
 export const ENEMY_NOTES = {
   grunt: 'Ordinary foot soldier.',
@@ -35,9 +44,10 @@ export const ENEMY_NOTES = {
   stealth: 'Hidden unless revealed or close to a tower.',
   healer: 'Heals nearby enemies.',
   vandal: 'Damages towers it passes.',
+  slinger: 'Shoots your towers from range.',
   splitter: 'Bursts into swarm when killed.',
-  flyer: 'Flies over your summoned defenders.',
-  boss: 'Huge. Immune to execute, freeze and knockback.',
+  flyer: 'Flies over walls, traps and your summoned defenders.',
+  boss: 'Huge. Stomps nearby towers. Immune to execute, freeze and knockback.',
 };
 
 const secs = (d) => `${fmt(d)}s`;
@@ -68,6 +78,7 @@ export function effectText(e) {
     case 'harvest':
       if (e.resource === 'tile') return `Earns ${e.amount > 1 ? fmt(e.amount) + ' free rack redraws' : 'a free rack redraw'} every ${secs(e.interval)}`;
       return `Makes ${fmt(e.amount)} ink every ${secs(e.interval)}`;
+    case 'interest': return `Each wave end, earns ${pct(e.pct)} interest on your ink (up to ${fmt(e.cap)})`;
     case 'summon': return `Sends ${fmt(e.count)} defender${e.count === 1 ? '' : 's'} (${fmt(e.hp)} hp, ${fmt(e.damage)} dmg/s) every ${secs(e.interval)}`;
     default: {
       const params = Object.entries(e).filter(([k]) => k !== 'type').map(([k, v]) => `${k} ${typeof v === 'number' ? fmt(v) : v}`).join(', ');
@@ -98,17 +109,18 @@ export function augmentSummary(aug) {
 }
 
 export function isAttacker(archetype) {
-  return !['support', 'harvest', 'summon'].includes(archetype);
+  return !['support', 'harvest', 'summon', 'wall'].includes(archetype);
 }
 
 export function isContinuous(archetype) {
-  return archetype === 'beam' || archetype === 'aura';
+  return archetype === 'beam' || archetype === 'aura' || archetype === 'vortex';
 }
 
 /** Effective DPS estimate for display. */
 export function dpsOf(archetype, stats) {
   if (!stats || !isAttacker(archetype)) return 0;
   if (isContinuous(archetype)) return stats.damage || 0;
+  if (archetype === 'orbit') return 0; // depends on how often enemies cross the orbs
   return (stats.damage || 0) * (stats.rate || 0);
 }
 

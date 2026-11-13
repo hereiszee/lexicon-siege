@@ -1,11 +1,13 @@
 // Lexicon Siege — headless game simulation. See CONTRACT.md ("ENGINE module").
 // No DOM. Collaborators (dictionary, towerFor, checkWordRules, themeBonus) are injected.
 
-import { OPPOSITE, ENEMIES, DEFAULTS } from '../core/constants.js';
+import { OPPOSITE, ENEMIES, DEFAULTS, PATH_ARCHETYPES } from '../core/constants.js';
 import { makeRng, hashString } from '../core/rng.js';
 import { buildPath, placeOnPath, nearestOnPath } from './paths.js';
 import { composeTower, indexEffects } from './stats.js';
 import { createBag, fillRack, missingLetters, consumedPositions } from './rack.js';
+import { RELICS, RELIC_IDS } from './relics.js';
+import { letterKinds, wordBonuses, applyLetterBonuses, bonusText } from './letters.js';
 
 /** Fixed simulation sub-step (seconds). */
 export const STEP = 1 / 60;
@@ -17,7 +19,7 @@ export const RULES = {
   stealthDetect: 1.5,      // stealth enemies within this many cells of any tower are revealed
   healerRadius: 1.5, healerHps: 4,
   vandalRadius: 1.5, vandalDps: 5,
-  unitEnemyDps: 5,         // each blocked enemy deals this to the unit blocking it
+  biteGrowth: 0.1,         // blocked enemy's bite DPS grows +10% (of base) per second blocked
   unitAttackInterval: 0.5, // units hit every 0.5 s for dps × 0.5
   unitBlockAhead: 0.45,    // enemy is blocked when within this many cells (along path) before a unit
   unitBlockBehind: 0.25,
@@ -28,9 +30,21 @@ export const RULES = {
   pierceRadius: 1.5,       // pierce: next enemy within this radius of the impact point
   pierceFalloff: 0.85,
   splitterChildren: 3,
+  // v2
+  wallBlockAhead: 0.6,     // enemy stops when within this many cells (along path) before a wall's centre
+  wallBlockBehind: 0.25,
+  thornInterval: 1,        // a wall's on-hit effects hit each biter once per second
+  trapTrigger: 0.5, trapRadius: 0.6,
+  mortarFlight: 1.2,
+  bossPull: 0.25,
+  orbitLap: 1.5, orbHit: 0.35, orbCooldownSteps: 30, // 0.5 s
+  slingInterval: 2, slingRange: 2.5, slingDamage: 6, slingSpeed: 6,
+  stompInterval: 4, stompRadius: 1.5, stompDamage: 20,
+  hitFlushSteps: 15,       // continuous tower damage (bite, vandal) is reported every 0.25 s
+  rewardEvery: 3,
 };
 
-const ATTACKERS = new Set(['bolt', 'blast', 'snipe', 'rapid', 'beam', 'chain', 'aura']);
+const ATTACKERS = new Set(['bolt', 'blast', 'snipe', 'rapid', 'beam', 'chain', 'aura', 'trap', 'mortar', 'vortex', 'pulse', 'orbit']);
 const PROJECTILE_KINDS = new Set(['bolt', 'blast', 'rapid']);
 const MAX_EVENTS = 20000;
 
@@ -61,6 +75,8 @@ export function createGame({
   const rackRng = makeRng((baseSeed ^ 0x9e3779b9) >>> 0);
   const fxRng = makeRng((baseSeed + 0x632be5ab) >>> 0);
   const shuffleRng = makeRng((baseSeed ^ 0x5bd1e995) >>> 0); // cosmetic: must not advance the bag
+  const rewardRng = makeRng((baseSeed ^ 0x27d4eb2f) >>> 0);  // own stream: rewards never perturb tile draws
+  const kinds = letterKinds(toSeed(level.seed ?? baseSeed));
 
   const cols = level.cols ?? DEFAULTS.cols;
   const rows = level.rows ?? DEFAULTS.rows;
@@ -83,6 +99,10 @@ export function createGame({
     }
   }
   const paths = (level.paths || []).map(buildPath);
+  const pathEnds = new Set();
+  for (const p of level.paths || []) {
+    for (const c of [p[0], p[p.length - 1]]) if (c) pathEnds.add(c[1] * cols + c[0]);
+  }
 
   // ---- state -----------------------------------------------------------------------------
   const bag = createBag(level.letterWeights, rackRng);
@@ -104,6 +124,9 @@ export function createGame({
     waveTime: 0,       // seconds since current wave started
     kills: 0,
     leaked: 0,
+    reward: null,      // v2 §3: pending reward offer
+    relics: [],
+    letterTiers: {},
   };
   fillRack(state.rack, [...state.rack.keys()], bag, DEFAULTS.minVowelsInRack);
 
@@ -115,6 +138,31 @@ export function createGame({
   const specCache = new Map();
   const wordsUsed = [];
   const hitScratch = [];   // reused id list for chain/pierce
+  const walls = [];        // reused per step
+  let stepNo = 0;
+  let rewardsOffered = 0;
+  // relic hooks, rebuilt whenever a relic is taken
+  const R = { stats: [], dmg: [], killInk: 0, waveInkMul: 1, refund: DEFAULTS.sellRefund, waveRedraws: 0, savedHp: 0, unitHpMul: 1, briarDps: 0 };
+  function rebuildRelicHooks() {
+    Object.assign(R, { stats: [], dmg: [], killInk: 0, waveInkMul: 1, refund: DEFAULTS.sellRefund, waveRedraws: 0, savedHp: 0, unitHpMul: 1, briarDps: 0 });
+    for (const id of state.relics) {
+      const r = RELICS[id];
+      if (r.stats) R.stats.push(r.stats);
+      if (r.dmg) R.dmg.push(r.dmg);
+      R.killInk += r.killInk || 0;
+      R.waveInkMul *= r.waveInkMul || 1;
+      R.refund = Math.max(R.refund, r.refund || 0);
+      R.waveRedraws += r.waveRedraws || 0;
+      R.savedHp += r.savedHp || 0;
+      R.unitHpMul *= r.unitHpMul || 1;
+      R.briarDps += r.briarDps || 0;
+    }
+  }
+  function relicDmg(t, e) {
+    let m = 1;
+    for (let i = 0; i < R.dmg.length; i++) m *= R.dmg[i](t, e);
+    return m;
+  }
 
   function emit(ev) {
     if (quiet) return;
@@ -182,14 +230,25 @@ export function createGame({
   function cellState(cx, cy) {
     if (!Number.isInteger(cx) || !Number.isInteger(cy) || cx < 0 || cy < 0 || cx >= cols || cy >= rows) return 'out';
     const i = cy * cols + cx;
+    if (towerGrid[i]) return 'tower'; // walls/traps sit on path cells
     if (grid[i] === CELL_PATH) return 'path';
     if (grid[i] === CELL_BLOCKED) return 'blocked';
-    if (towerGrid[i]) return 'tower';
     return 'free';
   }
 
-  function canBuild(cx, cy) {
-    return !over() && cellState(cx, cy) === 'free';
+  /** null if (cx, cy) can take a tower of this archetype, else a friendly reason. */
+  function buildReason(cx, cy, archetype) {
+    const cs = cellState(cx, cy);
+    if (!PATH_ARCHETYPES.includes(archetype)) return cs === 'free' ? null : BUILD_REASONS[cs];
+    if (cs === 'free') return 'Walls and traps go on the path';
+    if (cs !== 'path') return BUILD_REASONS[cs];
+    if (pathEnds.has(cy * cols + cx)) return "Not on the path's first or last cell";
+    return null;
+  }
+
+  /** archetype optional: wall/trap need a path cell, everything else a free cell. */
+  function canBuild(cx, cy, archetype) {
+    return !over() && buildReason(cx, cy, archetype) === null;
   }
 
   const BUILD_REASONS = {
@@ -204,9 +263,9 @@ export function createGame({
     const c = checkWord(word);
     if (!c.ok) return { ok: false, reason: c.reason };
     if (c.towerReason) return { ok: false, reason: c.towerReason };
-    const cs = cellState(cx, cy);
-    if (cs !== 'free') return { ok: false, reason: BUILD_REASONS[cs] };
     const spec = c.spec;
+    const why = buildReason(cx, cy, spec.archetype);
+    if (why) return { ok: false, reason: why };
     if (state.ink < spec.cost) return { ok: false, reason: `Not enough ink — need ${spec.cost}, have ${Math.floor(state.ink)}` };
     state.ink -= spec.cost;
     const t = {
@@ -220,7 +279,18 @@ export function createGame({
       fx: null, _base: null,
       healT: 0, shieldT: 0, harvestT: [], summonT: 0, unitSlots: [],
       anchor: null, beamPulse: 0, dead: false,
+      // v2
+      letterBonus: wordBonuses(word, kinds, state.letterTiers), // frozen at creation (§3)
+      killInk: 0, bonusHp: 0, healAcc: 0,
+      orbAngle: 0, orbPhase: (nextId * 2.399963) % (2 * Math.PI), orbHits: new Map(),
+      spots: [], pendingHit: { bite: 0, vandal: 0 },
     };
+    if (spec.archetype === 'wall') {
+      (level.paths || []).forEach((p, pi) => {
+        const k = p.findIndex(([x, y]) => x === cx && y === cy);
+        if (k >= 0) t.spots.push({ pathIndex: pi, progress: paths[pi].cum[k] });
+      });
+    }
     towerGrid[cy * cols + cx] = t.id;
     state.towers.push(t);
     composeInto(t);
@@ -268,7 +338,7 @@ export function createGame({
     const idx = state.towers.findIndex((x) => x.id === towerId);
     if (idx < 0 || over()) return { ok: false, refund: 0 };
     const t = state.towers[idx];
-    const refund = Math.floor(t.spent * DEFAULTS.sellRefund);
+    const refund = Math.floor(t.spent * R.refund);
     state.ink += refund;
     state.towers.splice(idx, 1);
     t.dead = true;
@@ -307,6 +377,8 @@ export function createGame({
   function startWave() {
     if (state.phase !== 'build') return { ok: false, reason: state.phase === 'wave' ? 'A wave is already running' : 'The game is over' };
     if (state.waveIndex >= state.waveCount) return { ok: false, reason: 'No waves left' };
+    if (state.reward) return { ok: false, reason: 'Choose your reward first' };
+    state.freeRedraws += R.waveRedraws;
     const w = waves[state.waveIndex];
     spawners = (w.groups || []).map((g) => ({ g, spawned: 0 }));
     state.phase = 'wave';
@@ -326,9 +398,14 @@ export function createGame({
     try { theme = Number(themeBonus(themeSpec, level)) || 1; } catch { theme = 1; }
     t.themeMul = theme;
     const c = composeTower(t.spec, t.augments, theme);
+    t.element = c.element;
+    const extra = {};
+    applyLetterBonuses(t.letterBonus, c.stats, c.effects, extra);
+    t.killInk = extra.killInk || 0;
+    for (const f of R.stats) f(t, c.stats, c.effects);
+    c.stats.hp += t.bonusHp;
     t._base = c.stats;
     t.effects = c.effects;
-    t.element = c.element;
     t.fx = indexEffects(c.effects);
     const oldMax = t.maxHp;
     t.maxHp = c.stats.hp;
@@ -361,6 +438,9 @@ export function createGame({
         splash: b.splash,
         projectileSpeed: b.projectileSpeed,
         hp: b.hp,
+        minRange: b.minRange,
+        pull: b.pull,
+        orbs: b.orbs,
       };
     }
   }
@@ -390,7 +470,7 @@ export function createGame({
     const off = (slot % 2 === 0 ? 1 : -1) * Math.ceil(slot / 2) * RULES.unitSpacing;
     let prog = t.anchor.progress + off;
     prog = Math.max(Math.min(0.5, p.length), Math.min(p.length - 0.5, prog));
-    const hp = Math.max(1, s.hp || 20);
+    const hp = Math.max(1, s.hp || 20) * R.unitHpMul;
     const u = {
       id: nextId++, x: 0, y: 0, hp, maxHp: hp, ownerId: t.id,
       pathIndex: t.anchor.pathIndex, progress: prog, _seg: 0, slot,
@@ -418,7 +498,7 @@ export function createGame({
     e.dead = true;
     e.hp = 0;
     const mul = src && src.fx && src.fx.bounty ? (src.fx.bounty.mul || 1) : 1;
-    const ink = Math.round(e.bounty * mul);
+    const ink = Math.round(e.bounty * mul) + R.killInk + (src && src.killInk ? src.killInk : 0);
     state.ink += ink;
     state.kills++;
     if (src) src.kills++;
@@ -438,7 +518,7 @@ export function createGame({
     let mult = 1;
     const c = t.fx && t.fx.crit;
     if (allowCrit && c && fxRng.next() < (c.chance || 0)) { crit = true; mult = c.mult || 2; }
-    const dmg = Math.max(1, base * em * mult - effArmor(e));
+    const dmg = Math.max(1, base * em * mult * relicDmg(t, e) - effArmor(e));
     emit({ type: 'hit', towerId: t.id, x: e.x, y: e.y, element: t.element, damage: dmg, crit });
     damageRaw(e, dmg, t);
     if (!e.dead && t.fx && t.fx.onHit) applyOnHit(t, e, em);
@@ -488,8 +568,9 @@ export function createGame({
   const targetable = (e) => !e.dead && (!e.stealth || e.revealed);
 
   /** "first": in range, least remaining path distance. */
-  function findFirst(x, y, range) {
+  function findFirst(x, y, range, minRange = 0) {
     const r2 = range * range;
+    const m2 = minRange * minRange;
     let best = null;
     let bestRem = Infinity;
     const es = state.enemies;
@@ -497,7 +578,8 @@ export function createGame({
       const e = es[i];
       if (e.dead || (e.stealth && !e.revealed)) continue;
       const dx = e.x - x, dy = e.y - y;
-      if (dx * dx + dy * dy > r2) continue;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > r2 || d2 < m2) continue;
       const rem = paths[e.pathIndex].length - e.progress;
       if (rem < bestRem) { bestRem = rem; best = e; }
     }
@@ -519,7 +601,7 @@ export function createGame({
     return best;
   }
 
-  function splashAt(t, x, y, radius, base, primary) {
+  function splashAt(t, x, y, radius, base, primary, allowCrit = false) {
     if (!(radius > 0)) return;
     const r2 = radius * radius;
     const es = state.enemies;
@@ -528,7 +610,7 @@ export function createGame({
       const e = es[i];
       if (e === primary || e.dead) continue;
       const dx = e.x - x, dy = e.y - y;
-      if (dx * dx + dy * dy <= r2) hitEnemy(t, e, base, false);
+      if (dx * dx + dy * dy <= r2) hitEnemy(t, e, base, allowCrit);
     }
   }
 
@@ -576,6 +658,10 @@ export function createGame({
       bounty: b.bounty, leak: b.leak, hpMul, speedMul,
       burnDps: 0, burnSrc: null, poisonDps: 0, poisonStacks: 0, poisonSrc: null,
       slowFactor: 1, abAmount: 0, dead: false,
+      // v2
+      bite: b.bite || 0, slinger: tr.includes('slinger'), stomp: tr.includes('stomp'),
+      blocked: false, blockedT: 0, thornT: 0, pull: 0,
+      slingT: RULES.slingInterval, stompT: RULES.stompInterval,
     };
     placeOnPath(paths[pi], e);
     state.enemies.push(e);
@@ -585,6 +671,7 @@ export function createGame({
   // ---- the tick --------------------------------------------------------------------------
   function step() {
     const dt = STEP;
+    stepNo++;
     state.time += dt;
     state.waveTime += dt;
     const es = state.enemies;
@@ -620,8 +707,10 @@ export function createGame({
       e.revealed = rev;
     }
 
-    // 3. units: reset engagement
+    // 3. units: reset engagement; collect standing walls
     for (let i = 0; i < units.length; i++) units[i].engaged = null;
+    walls.length = 0;
+    for (let k = 0; k < towers.length; k++) if (towers[k].archetype === 'wall') walls.push(towers[k]);
 
     // 4. enemies: statuses, abilities, movement
     for (let i = 0; i < es.length; i++) {
@@ -667,27 +756,83 @@ export function createGame({
           const d = dx * dx + dy * dy;
           if (d <= r2 && d < bd) { bd = d; best = t; }
         }
-        if (best) damageTower(best, RULES.vandalDps * dt);
+        if (best) damageTower(best, RULES.vandalDps * dt, 'vandal');
+      }
+      if (!held && e.slinger) {
+        e.slingT -= dt;
+        if (e.slingT <= 0) {
+          const tt = nearestTower(e.x, e.y, RULES.slingRange);
+          if (tt) {
+            e.slingT += RULES.slingInterval;
+            state.projectiles.push({
+              id: nextId++, x: e.x, y: e.y, tx: tt.x, ty: tt.y, element: e.element, kind: 'sling',
+              targetTower: tt, speed: RULES.slingSpeed, damage: RULES.slingDamage * e.hpMul, dead: false,
+            });
+            emit({ type: 'enemyShot', x: e.x, y: e.y, tx: tt.x, ty: tt.y });
+          } else e.slingT = 0;
+        }
+      }
+      if (!held && e.stomp) {
+        e.stompT -= dt;
+        if (e.stompT <= 0) {
+          e.stompT += RULES.stompInterval;
+          emit({ type: 'stomp', x: e.x, y: e.y });
+          const r2 = RULES.stompRadius * RULES.stompRadius;
+          for (let k = 0; k < towers.length; k++) {
+            const t = towers[k];
+            const dx = t.x - e.x, dy = t.y - e.y;
+            if (!t.disabled && dx * dx + dy * dy <= r2) damageTower(t, RULES.stompDamage * e.hpMul, 'stomp');
+          }
+        }
       }
 
-      // blocking by summoned units (same path, just ahead)
-      let blocker = null;
-      if (!e.flyer && units.length) {
+      // blocking by summoned units or walls (same path, just ahead)
+      let blocker = null, wall = null;
+      if (!e.flyer) {
         for (let k = 0; k < units.length; k++) {
           const u = units[k];
           if (u.dead || u.pathIndex !== e.pathIndex) continue;
           const gap = u.progress - e.progress;
           if (gap <= RULES.unitBlockAhead && gap >= -RULES.unitBlockBehind) { blocker = u; break; }
         }
+        for (let k = 0; k < walls.length && !blocker && !wall; k++) {
+          const w = walls[k];
+          if (w.disabled) continue;
+          for (const sp of w.spots) {
+            if (sp.pathIndex !== e.pathIndex) continue;
+            const gap = sp.progress - e.progress;
+            if (gap <= RULES.wallBlockAhead && gap >= -RULES.wallBlockBehind) { wall = w; break; }
+          }
+        }
       }
-      if (blocker) {
-        blocker.hp -= RULES.unitEnemyDps * dt;
-        if (!blocker.engaged || e.progress > blocker.engaged.progress) blocker.engaged = e;
-        if (blocker.hp <= 0) { blocker.hp = 0; blocker.dead = true; }
-      } else if (!held) {
-        const sp = e.speed * (st.slow > 0 ? e.slowFactor : 1);
-        e.progress += sp * dt;
+      e.blocked = !!(blocker || wall);
+      if (e.blocked) {
+        e.blockedT += dt;
+        const bite = e.bite * e.hpMul * (1 + RULES.biteGrowth * e.blockedT) * dt;
+        if (blocker) {
+          blocker.hp -= bite;
+          if (!blocker.engaged || e.progress > blocker.engaged.progress) blocker.engaged = e;
+          if (blocker.hp <= 0) { blocker.hp = 0; blocker.dead = true; }
+        } else {
+          damageTower(wall, bite, 'bite');
+          if (R.briarDps > 0) damageRaw(e, R.briarDps * dt, wall);
+          if (!e.dead && wall.fx.onHit) { // thorns
+            e.thornT -= dt;
+            if (e.thornT <= 0) { e.thornT += RULES.thornInterval; applyOnHit(wall, e, elementMul(wall.element, e.element)); }
+          }
+          if (e.dead) continue;
+        }
+      } else {
+        e.blockedT = 0;
+        e.thornT = 0;
       }
+      // movement: own speed (unless held/blocked) minus vortex pull from the last tick, never past spawn
+      const fwd = e.blocked || held ? 0 : e.speed * (st.slow > 0 ? e.slowFactor : 1);
+      if (fwd !== 0 || e.pull !== 0) {
+        e.progress += (fwd - e.pull) * dt;
+        if (e.progress < 0) e.progress = 0;
+      }
+      e.pull = 0;
       const p = paths[e.pathIndex];
       if (e.progress >= p.length) {
         e.dead = true;
@@ -726,6 +871,7 @@ export function createGame({
 
     // 7. projectiles
     stepProjectiles(dt);
+    if (stepNo % RULES.hitFlushSteps === 0) flushTowerHits();
 
     // 8. cleanup
     compact(es);
@@ -750,13 +896,37 @@ export function createGame({
     return null;
   }
 
-  function damageTower(t, amount) {
+  function nearestTower(x, y, radius) {
+    let best = null, bd = radius * radius;
+    for (const t of state.towers) {
+      if (t.disabled) continue;
+      const dx = t.x - x, dy = t.y - y;
+      const d = dx * dx + dy * dy;
+      if (d <= bd) { bd = d; best = t; }
+    }
+    return best;
+  }
+
+  function flushTowerHits() {
+    for (const t of state.towers) {
+      const ph = t.pendingHit;
+      for (const src in ph) {
+        if (ph[src] > 0) { emit({ type: 'towerHit', towerId: t.id, x: t.x, y: t.y, damage: ph[src], source: src }); ph[src] = 0; }
+      }
+    }
+  }
+
+  /** source: 'bite' | 'vandal' (continuous, reported every 0.25 s) | 'shot' | 'stomp'. */
+  function damageTower(t, amount, source = 'vandal') {
     if (t.shield > 0) {
       const a = Math.min(t.shield, amount);
       t.shield -= a;
       amount -= a;
     }
     if (amount <= 0) return;
+    const dmg = Math.min(amount, t.hp);
+    if (source in t.pendingHit) t.pendingHit[source] += dmg;
+    else emit({ type: 'towerHit', towerId: t.id, x: t.x, y: t.y, damage: dmg, source });
     t.hp -= amount;
     if (t.hp <= 0) {
       t.hp = 0;
@@ -780,7 +950,12 @@ export function createGame({
           if (o.hp >= o.maxHp) continue;
           const dx = o.x - t.x, dy = o.y - t.y;
           if (dx * dx + dy * dy > r2) continue;
+          const before = o.hp;
           o.hp = Math.min(o.maxHp, o.hp + amt);
+          if (R.savedHp > 0) {
+            o.healAcc += o.hp - before;
+            while (o.healAcc >= 10) { o.healAcc -= 10; o.bonusHp += R.savedHp; o.maxHp += R.savedHp; o._base.hp += R.savedHp; o.stats.hp += R.savedHp; }
+          }
           if (o.disabled && o.hp > RULES.revivePct * o.maxHp) { o.disabled = false; dirty = true; }
           emit({ type: 'heal', towerId: o.id, x: o.x, y: o.y });
         }
@@ -823,17 +998,22 @@ export function createGame({
 
   function towerAttack(t, dt) {
     const s = t.stats;
-    if (!(s.damage > 0)) return;
     const arch = t.archetype;
     // cooldown only runs down while positive; firing adds 1/rate (keeps fractional carry)
-    if (t.cooldown > 0) t.cooldown -= dt;
+    if (t.cooldown > 0 && (s.damage > 0 || arch === 'vortex')) t.cooldown -= dt;
+    if (arch === 'vortex') return vortexTick(t, s, dt);
+    if (!(s.damage > 0)) return;
+    if (arch === 'trap') return trapTick(t, s);
+    if (arch === 'pulse') return pulseTick(t, s);
+    if (arch === 'orbit') return orbitTick(t, s);
+    if (arch === 'mortar') return mortarTick(t, s);
     if (arch === 'beam') {
       const e = findFirst(t.x, t.y, s.range);
       t.targetId = e ? e.id : null;
       if (!e) return;
       const em = elementMul(t.element, e.element);
       const pulse = t.cooldown <= 0 && s.rate > 0;
-      damageRaw(e, Math.max(1, s.damage * em - effArmor(e)) * dt, t);
+      damageRaw(e, Math.max(1, s.damage * em * relicDmg(t, e) - effArmor(e)) * dt, t);
       if (pulse) {
         t.cooldown += 1 / s.rate;
         emit({ type: 'shot', towerId: t.id, x: t.x, y: t.y, tx: e.x, ty: e.y, element: t.element, archetype: 'beam' });
@@ -855,7 +1035,7 @@ export function createGame({
         if (dx * dx + dy * dy > r2) continue;
         any = true;
         const em = elementMul(t.element, e.element);
-        damageRaw(e, Math.max(1, s.damage * em - effArmor(e)) * dt, t);
+        damageRaw(e, Math.max(1, s.damage * em * relicDmg(t, e) - effArmor(e)) * dt, t);
         if (pulse && !e.dead && t.fx.onHit) applyOnHit(t, e, em);
       }
       if (pulse && any) emit({ type: 'shot', towerId: t.id, x: t.x, y: t.y, tx: t.x, ty: t.y, element: t.element, archetype: 'aura' });
@@ -902,12 +1082,151 @@ export function createGame({
     }
   }
 
+  // ---- v2 archetypes ----------------------------------------------------------------------
+  function vortexTick(t, s, dt) {
+    const r2 = s.range * s.range;
+    const rate = s.rate > 0 ? s.rate : 1; // cadence of the visual pulse + on-hit effects
+    const pulse = t.cooldown <= 0;
+    if (pulse) t.cooldown += 1 / rate;
+    const es = state.enemies;
+    const n = es.length;
+    let any = false;
+    for (let i = 0; i < n; i++) {
+      const e = es[i];
+      if (e.flyer || !targetable(e)) continue;
+      const dx = e.x - t.x, dy = e.y - t.y;
+      if (dx * dx + dy * dy > r2) continue;
+      any = true;
+      const pull = (s.pull || 0) * (e.boss ? RULES.bossPull : 1);
+      if (pull > e.pull) e.pull = pull; // strongest vortex wins, no stacking
+      const em = elementMul(t.element, e.element);
+      if (s.damage > 0) damageRaw(e, Math.max(1, s.damage * em * relicDmg(t, e) - effArmor(e)) * dt, t);
+      if (pulse && !e.dead && t.fx.onHit) applyOnHit(t, e, em);
+    }
+    t.targetId = null;
+    if (pulse && any) emit({ type: 'shot', towerId: t.id, x: t.x, y: t.y, tx: t.x, ty: t.y, element: t.element, archetype: 'vortex' });
+  }
+
+  function trapTick(t, s) {
+    if (t.cooldown > 0 || !(s.rate > 0)) return;
+    const es = state.enemies;
+    const n = es.length;
+    const trig2 = RULES.trapTrigger * RULES.trapTrigger;
+    let armed = false;
+    for (let i = 0; i < n && !armed; i++) {
+      const e = es[i];
+      if (e.dead || e.flyer) continue;
+      const dx = e.x - t.x, dy = e.y - t.y;
+      if (dx * dx + dy * dy <= trig2) armed = true;
+    }
+    if (!armed) return;
+    t.cooldown += 1 / s.rate;
+    emit({ type: 'shot', towerId: t.id, x: t.x, y: t.y, tx: t.x, ty: t.y, element: t.element, archetype: 'trap' });
+    const r = Math.max(RULES.trapRadius, splashRadius(t));
+    const r2 = r * r;
+    for (let i = 0; i < n; i++) {
+      const e = es[i];
+      if (e.dead || e.flyer) continue;
+      const dx = e.x - t.x, dy = e.y - t.y;
+      if (dx * dx + dy * dy <= r2) hitEnemy(t, e, s.damage);
+    }
+  }
+
+  function pulseTick(t, s) {
+    if (t.cooldown > 0 || !(s.rate > 0)) return;
+    const r2 = s.range * s.range;
+    const es = state.enemies;
+    const n = es.length;
+    let fired = false;
+    for (let i = 0; i < n; i++) {
+      const e = es[i];
+      if (!targetable(e)) continue;
+      const dx = e.x - t.x, dy = e.y - t.y;
+      if (dx * dx + dy * dy > r2) continue;
+      if (!fired) {
+        fired = true;
+        t.cooldown += 1 / s.rate;
+        emit({ type: 'shot', towerId: t.id, x: t.x, y: t.y, tx: t.x, ty: t.y, element: t.element, archetype: 'pulse' });
+      }
+      hitEnemy(t, e, s.damage);
+    }
+  }
+
+  function orbitTick(t, s) {
+    const n = Math.max(1, Math.round(s.orbs || 1));
+    const R0 = s.range;
+    t.orbAngle = t.orbPhase + (2 * Math.PI * state.time) / RULES.orbitLap;
+    const hr = RULES.orbHit, hr2 = hr * hr;
+    const outer = (R0 + hr) * (R0 + hr);
+    const inner = R0 > hr ? (R0 - hr) * (R0 - hr) : -1;
+    const es = state.enemies;
+    const N = es.length;
+    for (let i = 0; i < N; i++) {
+      const e = es[i];
+      if (!targetable(e)) continue;
+      const dx = e.x - t.x, dy = e.y - t.y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > outer || d2 < inner) continue;
+      for (let k = 0; k < n && !e.dead; k++) {
+        const a = t.orbAngle + (2 * Math.PI * k) / n;
+        const ox = R0 * Math.cos(a) - dx, oy = R0 * Math.sin(a) - dy;
+        if (ox * ox + oy * oy > hr2) continue;
+        const key = e.id * 8 + k;
+        const last = t.orbHits.get(key);
+        if (last !== undefined && stepNo - last < RULES.orbCooldownSteps) continue;
+        t.orbHits.set(key, stepNo);
+        hitEnemy(t, e, s.damage);
+      }
+    }
+    if (t.orbHits.size > 512) for (const [k, v] of t.orbHits) if (stepNo - v >= RULES.orbCooldownSteps) t.orbHits.delete(k);
+  }
+
+  function mortarTick(t, s) {
+    if (t.cooldown > 0 || !(s.rate > 0)) return;
+    const e = findFirst(t.x, t.y, s.range, s.minRange || 0);
+    if (!e) { t.targetId = null; return; }
+    t.targetId = e.id;
+    t.cooldown += 1 / s.rate;
+    // lead the target: aim where it will be when the shell lands
+    const held = e.blocked || e.statuses.freeze > 0 || e.statuses.stun > 0;
+    const sp = held ? 0 : e.speed * (e.statuses.slow > 0 ? e.slowFactor : 1);
+    const p = paths[e.pathIndex];
+    const aim = { progress: Math.min(p.length, e.progress + sp * RULES.mortarFlight), _seg: e._seg, x: 0, y: 0 };
+    placeOnPath(p, aim);
+    emit({ type: 'shot', towerId: t.id, x: t.x, y: t.y, tx: aim.x, ty: aim.y, element: t.element, archetype: 'mortar' });
+    state.projectiles.push({
+      id: nextId++, x: t.x, y: t.y, sx: t.x, sy: t.y, tx: aim.x, ty: aim.y, element: t.element, kind: 'mortar',
+      age: 0, flight: RULES.mortarFlight, tower: t, towerId: t.id, damage: s.damage, dead: false,
+    });
+  }
+
   function stepProjectiles(dt) {
     const ps = state.projectiles;
     const n = ps.length;
     for (let i = 0; i < n; i++) {
       const p = ps[i];
       if (p.dead) continue;
+      if (p.kind === 'mortar') {
+        p.age += dt;
+        const f = Math.min(1, p.age / p.flight);
+        p.x = p.sx + (p.tx - p.sx) * f;
+        p.y = p.sy + (p.ty - p.sy) * f;
+        if (f >= 1) {
+          splashAt(p.tower, p.tx, p.ty, Math.max(0.5, splashRadius(p.tower)), p.damage, null, true);
+          p.dead = true;
+        }
+        continue;
+      }
+      if (p.kind === 'sling') {
+        const tt = p.targetTower;
+        const dx = p.tx - p.x, dy = p.ty - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const move = p.speed * dt;
+        if (dist > move) { p.x += (dx / dist) * move; p.y += (dy / dist) * move; continue; }
+        if (!tt.dead && !tt.disabled) damageTower(tt, p.damage, 'shot');
+        p.dead = true;
+        continue;
+      }
       let tg = p.target;
       if (tg && tg.dead) {
         p.hits.push(tg.id);
@@ -949,18 +1268,123 @@ export function createGame({
 
   function endWave() {
     const index = state.waveIndex;
-    const bonusInk = 10 + 2 * (index + 1);
+    const bonusInk = Math.round((10 + 2 * (index + 1)) * R.waveInkMul);
     state.ink += bonusInk;
     state.projectiles.length = 0;
     spawners = [];
+    flushTowerHits();
     state.waveIndex++;
     emit({ type: 'waveEnd', index, bonusInk });
+    for (const t of state.towers) { // interest on the banked ink, per tower
+      const it = t.fx.interest;
+      if (!it || t.disabled) continue;
+      const gain = Math.min(it.cap ?? Infinity, Math.floor(state.ink * (it.pct || 0)));
+      if (gain <= 0) continue;
+      state.ink += gain;
+      emit({ type: 'harvest', towerId: t.id, x: t.x, y: t.y, resource: 'ink', amount: gain });
+    }
     if (state.waveIndex >= state.waveCount && state.lives > 0) {
       state.phase = 'won';
       emit({ type: 'won' });
     } else {
       state.phase = 'build';
+      const w = index + 1;
+      if (w % RULES.rewardEvery === 0 && w < state.waveCount) offerReward();
     }
+  }
+
+  // ---- rewards (v2 §3) -------------------------------------------------------------------
+  function relicCandidates(exclude) {
+    return RELIC_IDS.filter((id) => !state.relics.includes(id) && !exclude.includes(id));
+  }
+  function letterCandidates(exclude) {
+    const out = [];
+    for (let i = 0; i < 26; i++) {
+      const l = String.fromCharCode(97 + i);
+      if ((state.letterTiers[l] || 0) >= 2 || exclude.includes(l)) continue;
+      let inRack = 0;
+      for (const ch of state.rack) if (ch === l) inRack++;
+      out.push([l, 1 + 4 * inRack]); // favour letters in the current rack
+    }
+    return out;
+  }
+  function letterOption(l) {
+    const tier = (state.letterTiers[l] || 0) + 1;
+    return { letter: l, bonus: kinds[l], tier, text: bonusText(l, kinds[l], tier) };
+  }
+  function drawOption(kind, taken) {
+    if (kind === 'relic') {
+      const c = relicCandidates(taken);
+      return c.length ? c[Math.floor(rewardRng.next() * c.length)] : null;
+    }
+    const c = letterCandidates(taken);
+    return c.length ? letterOption(rewardRng.weighted(c)) : null;
+  }
+  const optionKey = (o) => (typeof o === 'string' ? o : o.letter);
+  function offerReward() {
+    const first = rewardsOffered % 2 === 0 ? 'relic' : 'letter';
+    rewardsOffered++;
+    for (const kind of [first, first === 'relic' ? 'letter' : 'relic']) {
+      const options = [];
+      for (let k = 0; k < 3; k++) {
+        const o = drawOption(kind, options.map(optionKey));
+        if (o) options.push(o);
+      }
+      if (!options.length) continue;
+      state.reward = { kind, options, rerolls: 1 };
+      emit({ type: 'reward', kind });
+      return;
+    }
+  }
+  function chooseReward(i) {
+    const r = state.reward;
+    if (!r) return { ok: false, reason: 'No reward to choose' };
+    const o = r.options[i];
+    if (o == null) return { ok: false, reason: 'No such option' };
+    state.reward = null;
+    let id;
+    if (r.kind === 'relic') {
+      id = o;
+      state.relics.push(id);
+      rebuildRelicHooks();
+      if (RELICS[id].take) RELICS[id].take(relicApi);
+    } else {
+      id = o.letter;
+      state.letterTiers[o.letter] = o.tier;
+    }
+    for (const t of state.towers) composeInto(t);
+    refreshAll();
+    emit({ type: 'rewardTaken', kind: r.kind, id });
+    return { ok: true };
+  }
+  function rerollReward(i) {
+    const r = state.reward;
+    if (!r) return { ok: false, reason: 'No reward to reroll' };
+    if (r.rerolls <= 0) return { ok: false, reason: 'No rerolls left' };
+    if (r.options[i] == null) return { ok: false, reason: 'No such option' };
+    const o = drawOption(r.kind, r.options.map(optionKey));
+    if (!o) return { ok: false, reason: 'Nothing else to offer' };
+    r.options[i] = o;
+    r.rerolls--;
+    return { ok: true };
+  }
+  function skipReward() {
+    if (!state.reward) return { ok: false, reason: 'No reward to skip' };
+    state.reward = null;
+    return { ok: true };
+  }
+  const relicApi = {
+    state,
+    addRackTile() {
+      state.rack.push(bag.draw());
+      emit({ type: 'rack', rack: state.rack.slice() });
+    },
+  };
+  function letterBonus(letter) {
+    const l = String(letter || '').toLowerCase();
+    if (!kinds[l]) return null;
+    const tier = state.letterTiers[l] || 0;
+    return { kind: kinds[l], tier, text: bonusText(l, kinds[l], tier) };
   }
 
   function compact(arr) {
@@ -1036,9 +1460,16 @@ export function createGame({
     startWave,
     drainEvents,
     result,
+    chooseReward,
+    rerollReward,
+    skipReward,
+    letterBonus,
     // extras (non-contract helpers)
     cellState,
     towerAt: (cx, cy) => (cellState(cx, cy) === 'tower' ? towerById(towerGrid[cy * cols + cx]) : null),
     spawnEnemy, // for tests / sandbox
+    buildReason, // (cx, cy, archetype?) → null | reason
+    themeFor: (spec) => { try { return Number(themeBonus(spec, level)) || 1; } catch { return 1; } },
+    rules: RULES,
   };
 }

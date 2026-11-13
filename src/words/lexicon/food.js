@@ -33,10 +33,10 @@ export default [
  grub chow fare cuisine recipe recipes
  sauce`),
   C('sweets', 'support', 'light', 'buff.rate', 'food sweet', '🍬', 'Hands out sweets that hurry nearby towers',
-    `candy candies sugar sugars honey honeycomb chocolate chocolates caramel caramels toffee fudge syrup jam
- jams jelly jellies cream creams icecream dessert desserts sweet sweets treat treats lollipop lollipops
+    `candy candies sugar sugars  honeycomb chocolate chocolates caramel caramels toffee fudge  
+    cream creams icecream dessert desserts sweet sweets treat treats lollipop lollipops
  marshmallow marshmallows licorice liquorice gumdrop gumdrops bonbon bonbons truffle custard pudding
- puddings sundae sundaes frosting icing marzipan nougat praline sherbet sorbet molasses treacle
+ puddings sundae sundaes frosting icing marzipan nougat praline sherbet sorbet molasses 
  confection confections cotton candy candyfloss`),
   C('spicy', 'bolt', 'fire', 'burn:1.1', 'food spicy fire', '🌶', 'Spits fiery peppers',
     `pepper peppers chili chilies chilli chillies jalapeno jalapenos habanero habaneros paprika cayenne mustard

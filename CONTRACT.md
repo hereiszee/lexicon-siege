@@ -266,3 +266,122 @@ Game screen:
   on-theme towers hit hard). `LevelSpec.wordElement` is the level word's own element; the UI
   picks the board biome from `wordElement`.
 - The `towerSold` event carries `x, y` (the tower is already removed from state when it fires).
+
+---
+
+# v2 — gradual difficulty, hints, relics, letter upgrades, more tower kinds, tower damage
+
+Binding for the v2 build. Everything above still holds unless overridden here.
+`src/core/constants.js` already has the v2 ids: 6 new ARCHETYPES, PATH_ARCHETYPES,
+the `interest` effect, `bite` on every enemy, the `slinger` enemy and the boss `stomp` trait.
+
+## 1. New archetypes (TowerSpec additions)
+
+| archetype | placed on | behaviour | stats used (extra keys in `stats`) | example words |
+|---|---|---|---|---|
+| wall   | a path cell | blocks non-flyers; they stop and deal their `bite` DPS to it; no attack | `hp` high (≈4× a bolt's) | wall fence gate door dam barricade hedge rampart boulder brick log |
+| trap   | a path cell | walkers pass over it; when any enemy is within 0.5 of its centre and it is armed, it hits ALL enemies within 0.6 for `damage` + on-hit effects, then rearms after `1/rate` s; flyers don't trigger it | `damage`, `rate` | trap snare net web spike mine pit caltrop tack thorn tar glue |
+| mortar | beside path | lobbed shell, flight time ≈ 1.2 s, splash; cannot target enemies closer than `minRange` | `damage`, `rate`, `range` (≈5), `minRange` (≈1.5), `splash` (≈1.2) | mortar catapult trebuchet volcano meteor comet howitzer |
+| vortex | beside path | every walker in range moves BACKWARDS along its path at `pull` cells/s (bosses at 25%, never past spawn) and takes `damage` DPS | `damage` (DPS), `range`, `pull` (≈0.6) | magnet tornado whirlpool gravity hook lasso vacuum undertow |
+| pulse  | beside path | every `1/rate` s one shockwave hits every enemy in range once, with on-hit effects | `damage` per wave, `rate`, `range` | quake roar drum bell thunder stomp shout siren gong |
+| orbit  | beside path | `orbs` orbs (1–4) circle at radius `range` (one lap per 1.5 s); an orb hits an enemy it touches (within 0.35) for `damage`, each enemy at most once per 0.5 s per orb | `damage`, `range` (≈1.2), `orbs` | moon planet satellite halo propeller fan wheel shuriken boomerang |
+
+Walls/traps cannot be built on the first or last cell of a path, nor on a cell holding
+another tower. Summoned units still stand on the path; a wall and a unit may share a lane.
+Augments on walls/traps work like on any tower (mods + effects); a wall with on-hit
+effects applies them when bitten (thorns).
+
+`interest {pct, cap}` (passive): at each wave end, gain `floor(ink × pct)` up to `cap`.
+Words: bank vault safe purse treasury investor banker.
+
+**Variety target (WORDS):** among dictionary words of 2–8 letters no archetype above 12% or
+below 3%; each new archetype has ≥ 60 curated words that obviously fit it.
+
+## 2. Towers take damage (healing matters)
+
+- Enemies blocked by a wall or a summoned unit stand and deal `ENEMIES[type].bite × hpMul`
+  DPS to it; that DPS grows +10% per second spent blocked (stops endless stalls).
+- `vandal` unlocks at difficulty 7 (was 55). `slinger` (new): every 2 s shoots the nearest tower
+  within 2.5 cells for `6 × hpMul` damage, as a visible projectile; unlocks at 18.
+- Boss `stomp`: every 4 s, `20 × hpMul` to every tower within 1.5 cells.
+- A tower at 0 hp is `disabled` until healed above 30% (unchanged). Disabled walls stop blocking.
+- Events: `{type:'towerHit', towerId, x, y, damage, source:'bite'|'vandal'|'shot'|'stomp'}`,
+  `{type:'enemyShot', x, y, tx, ty}` (slinger shot launched), `{type:'stomp', x, y}`.
+
+## 3. Rewards: relics and letter upgrades
+
+- After clearing wave w (1-based) with `w % 3 === 0 && w < waveCount`, the engine offers a reward,
+  alternating relic → letter → relic …, first one a relic. While `state.reward` is set,
+  `startWave()` returns `{ok:false, reason:'Choose your reward first'}`; building still works.
+- `state.reward = null | { kind:'relic', options:[relicId×3], rerolls:1 }
+                            | { kind:'letter', options:[{letter, bonus, tier}×3], rerolls:1 }`
+  (`tier` = the tier the letter would reach: 1 silver, 2 gold).
+- `game.chooseReward(i)` → `{ok}`; `game.rerollReward(i)` → `{ok}` replaces option i, once per
+  offer (`rerolls` counts down); `game.skipReward()` → `{ok}`.
+- `state.relics: [relicId]` (owned this level); `state.letterTiers: { h:2, l:1 }`.
+- Events: `{type:'reward', kind}` when offered, `{type:'rewardTaken', kind, id}`.
+- **Relics** live in `src/game/relics.js`: `export const RELICS = { id: { name, text, icon } }`
+  plus engine hooks. ≥ 24 relics, every one with a real, testable effect (examples: FARSIGHTED
+  all towers +1 range; SAVED each 10 hp healed on a tower gives it +2 max hp permanently;
+  STUNNING +150% damage to stunned enemies; DEEP POCKETS +1 rack tile; MASON walls +100% hp;
+  TRAPPER traps rearm 2× faster; INKWELL +5 ink per kill… cover economy, defence, each element,
+  several archetypes, rack/letters). `icon` is one of: shield bird star coin eye flame snowflake
+  bolt heart hourglass book crown skull leaf wave anchor gem key. No duplicates in one offer;
+  never offer an owned relic.
+- **Letter upgrades** live in `src/game/letters.js`: each letter has one bonus kind chosen per
+  level from the level seed (kinds: damage, rate, range, hp, splash, pierce, chain, crit, burn,
+  slow, poison, ink). Silver/gold values per kind are defined there (e.g. splash +0.25/+0.4 cells
+  radius; pierce +1/+2; damage +10%/+18%). They apply to towers **created afterwards**, once per
+  occurrence of the letter in the word (“HILL” with silver L gets the L bonus twice); existing
+  towers are unaffected. Options favour letters in the current rack. `game.letterBonus(letter)`
+  → `{kind, tier, text}` for UI. Tile tier shows on the rack (silver/gold tiles).
+
+## 4. Hints
+
+`suggestWords(game, finder, n = 3)` exported from `src/game/bot.js` → up to n
+`{ word, use:'tower'|'augment', spec, score, towerId? }`, best first: spellable from the current
+rack, legal under level rules, affordable now, ranked by the bot's value-per-ink (augments ranked
+by real gain on the best target). Must take < 30 ms. The UI builds `finder` once with
+`makeWordFinder(dictionary)` (~50 ms) after the dictionary loads. A HINT pill in the rack row
+(key `?`) shows them as clickable chips that compose the word; free and unlimited.
+
+## 5. Gradual difficulty (Bloons-style)
+
+Translate how Bloons TD ramps: many short rounds; round 1 is trivially easy; each round only a
+little harder than the last; new enemy kinds arrive one at a time, first alone in small numbers,
+then mixed in; per-round cash.
+- Within a level: wave 1 trivially easy; wave HP rises smoothly; at most ONE new enemy type is
+  introduced per level (and listed in `level.newEnemies: ['runner']`), whose first appearance is a
+  small group of that type alone; earlier types fill the rest.
+- Wave count: about 6 at level 1, growing to ~25 by level 1000; keep each wave short.
+- Across levels: smooth and monotone. Remove spikes: scale budgets by path length (longer path
+  = more time to shoot), two-path levels, and boss levels so a level is never much harder than its
+  neighbours. No twin-boss spike.
+- Smoothness is measured with the bot over ≥ 10 seeds: no level's skill-0.5 win rate differs by
+  more than 25 points from the mean of its ±5 neighbours; 20-level bucket means non-increasing
+  (±5 noise). Rough anchors: levels 1–10 skill 0.15 ≥ 90%; skill 0.15 crosses 50% near level 40–60;
+  skill 0.5 near level 300–400; skill 1.0 near level 800–1000.
+- `ENEMY_UNLOCK` is re-spaced so new types keep arriving through the first ~120 levels
+  (vandal 7, slinger 18 as in §2; the rest in between and after).
+
+## Ownership for v2
+
+| Worker | Files |
+|---|---|
+| WORDS  | `src/words/**`, `scripts/build-words.mjs`, `data/words.txt`, `tests/words*` |
+| ENGINE | `src/game/**` (incl. new `relics.js`, `letters.js`, bot + `suggestWords`), `tests/game*` |
+| LEVELS | `src/levels/**`, `tests/levels*` |
+| UI     | `index.html`, `styles.css`, `src/main.js`, `src/ui/**` |
+| conductor | `CONTRACT.md`, `src/core/**`, `package.json` |
+| BALANCE (later) | `src/levels/waves.js` TUNING, `src/game/bot.js`, `scripts/balance.mjs`, relic/letter numbers |
+
+### v2 addendum — engine as built (binding)
+- `game.canBuild(cx, cy, archetype)`: pass the word's archetype; without it path cells are refused.
+  `game.buildReason(cx, cy, archetype)` gives the refusal text.
+- `tower.stats` adds `minRange`, `pull`, `orbs`; orb k is at angle `tower.orbAngle + 2πk/orbs`,
+  radius `stats.range` (advances only during waves). `enemy.blocked` is true while biting.
+- Projectile kinds: `'mortar'` has `sx, sy, tx, ty, age, flight`; `'sling'` is an enemy shot at a tower.
+- Letter reward options are `{letter, bonus /*kind id*/, tier, text}`. `rewardTaken.id` is the relic id or the letter.
+- Relics apply to existing towers immediately; letter bonuses only to towers built afterwards,
+  counting letters of the base word only. Deep Pockets makes `state.rack.length` 11.
+- `towerHit` for bite/vandal is batched every 0.25 s per tower and source.

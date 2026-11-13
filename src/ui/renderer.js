@@ -2,14 +2,16 @@
 // Static ground (cached) + per-frame towers, chess-piece crowds, projectiles and FX.
 import { hashString, mulberry32 } from '../core/rng.js';
 import {
-  letterSprite, rangeDisc, drawPiece, drawAsterisk, lookFor, elementColor,
-  SANS, SHADOW_DIR,
+  letterSprite, rangeDisc, drawPiece, drawAsterisk, lookFor, elementColor, drawSling,
+  SANS, HEAVY, SHADOW_DIR,
 } from './sprites.js';
 import { rgba, mixHex } from './dom.js';
 
 const TAU = Math.PI * 2;
 /** Tower letters are ~1.5 cells tall; lift them so the word label sits across their lower part. */
 const LETTER_UP = 0.12;
+/** Space kept above row 0 for the collapsed level card (and the letters rising out of row 0). */
+const TOP_AIR = 46, BOTTOM_AIR = 10;
 
 /* ------------------------------------------------------------------- biomes */
 export const BIOMES = {
@@ -42,6 +44,7 @@ export function createRenderer(canvas) {
   let pathSet = new Set();
   const motion = new Map();   // enemy id → { x, y, dx, dy, sx, sy } (sx,sy = last drawn world pos)
   const trails = new Map();   // projectile id → [x,y,…]
+  const lobs = new Map();     // mortar projectile id → launch point {x, y}
 
   function setLevel(lvl) {
     level = lvl;
@@ -50,7 +53,7 @@ export function createRenderer(canvas) {
     biome = BIOMES[biomeFor(lvl.wordElement ?? lvl.element)];
     pathSet = new Set();
     for (const p of lvl.paths || []) for (const [x, y] of p) pathSet.add(x + ',' + y);
-    motion.clear(); trails.clear();
+    motion.clear(); trails.clear(); lobs.clear();
     staticLayer = null;
     if (W > 0) layout();
   }
@@ -68,10 +71,11 @@ export function createRenderer(canvas) {
   }
 
   function layout() {
-    // keep a little air at the top so row-0 letters (which rise above their cell) aren't cut off
-    S = Math.max(8, Math.min(W / cols, (H - 50) / rows));
+    // keep air at the top so row-0 letters (which rise above their cell) aren't cut off and the
+    // collapsed level card never covers a cell
+    S = Math.max(8, Math.min(W / cols, (H - TOP_AIR - BOTTOM_AIR) / rows));
     OX = Math.round((W - cols * S) / 2);
-    OY = Math.round((H - rows * S) / 2);
+    OY = Math.round(TOP_AIR + (H - TOP_AIR - BOTTOM_AIR - rows * S) / 2);
     buildStatic();
   }
 
@@ -472,6 +476,7 @@ export function createRenderer(canvas) {
     for (const tw of state.towers) {
       const a = tw.spec?.archetype;
       if ((a === 'aura' || a === 'support') && !tw.disabled && tw.stats?.range) drawDisc(tw.x, tw.y, tw.stats.range, elementColor(tw.element), 0.16);
+      if (a === 'vortex' && tw.stats?.range) drawVortex(tw, t);
     }
     if (f.rangeTower) {
       const tw = f.rangeTower;
@@ -517,10 +522,19 @@ export function createRenderer(canvas) {
     if (gh && gh.mode === 'tower') {
       ctx.save();
       ctx.globalAlpha = gh.ok ? 0.7 : 0.45;
-      const spr = letterSprite(gh.spec.word[0], gh.ok ? (gh.spec.color || elementColor(gh.spec.element)) : '#d0402b', S, dpr);
-      ctx.drawImage(spr.canvas, X(gh.cx + 0.5) - spr.css / 2, Y(gh.cy + 0.5) - spr.css / 2 - LETTER_UP * S, spr.css, spr.css);
+      const gcol = gh.ok ? (gh.spec.color || elementColor(gh.spec.element)) : '#d0402b';
+      const gx = X(gh.cx + 0.5), gy = Y(gh.cy + 0.5);
+      if (gh.spec.archetype === 'trap') drawTrap(gx, gy, gh.spec.word[0], gcol, Infinity, false, false);
+      else {
+        const wall = gh.spec.archetype === 'wall';
+        const spr = letterSprite(gh.spec.word[0], gcol, S, dpr);
+        const sz = spr.css * (wall ? 0.8 : 1);
+        ctx.drawImage(spr.canvas, gx - sz / 2, gy - sz / 2 - LETTER_UP * S - (wall ? S * 0.12 : 0), sz, sz);
+        if (wall) drawWallBase(gx, gy, false);
+      }
       ctx.restore();
     }
+    for (const tw of towers) if (tw.spec?.archetype === 'orbit' && !tw.disabled) drawOrbs(tw, state);
 
     // Summoned defenders: white pawns.
     for (const u of state.units || []) {
@@ -543,6 +557,7 @@ export function createRenderer(canvas) {
     const liveP = new Set();
     for (const p of state.projectiles || []) {
       liveP.add(p.id);
+      if (p.kind === 'mortar') { drawShell(p); continue; }
       let tr = trails.get(p.id);
       if (!tr) { tr = []; trails.set(p.id, tr); }
       tr.push(p.x, p.y);
@@ -551,6 +566,17 @@ export function createRenderer(canvas) {
       const vx = n >= 4 ? tr[n - 2] - tr[n - 4] : (p.tx - p.x), vy = n >= 4 ? tr[n - 1] - tr[n - 3] : (p.ty - p.y);
       const ang = Math.atan2(vy, vx);
       const col = elementColor(p.element);
+      if (p.kind === 'sling') { // slinger stone: small dark pellet with a grey smear
+        ctx.save();
+        for (let i = 0; i + 1 < n; i += 2) {
+          ctx.fillStyle = `rgba(40,40,46,${0.08 + 0.3 * (i / n)})`;
+          ctx.beginPath(); ctx.arc(X(tr[i]), Y(tr[i + 1]) - S * 0.2, Math.max(1.5, S * 0.03), 0, TAU); ctx.fill();
+        }
+        ctx.fillStyle = '#26272b';
+        ctx.beginPath(); ctx.arc(X(p.x), Y(p.y) - S * 0.2, Math.max(2.2, S * 0.055), 0, TAU); ctx.fill();
+        ctx.restore();
+        continue;
+      }
       if (n >= 4) {
         ctx.save();
         ctx.lineCap = 'round';
@@ -582,6 +608,7 @@ export function createRenderer(canvas) {
       ctx.restore();
     }
     for (const id of trails.keys()) if (!liveP.has(id)) trails.delete(id);
+    for (const id of lobs.keys()) if (!liveP.has(id)) lobs.delete(id);
 
     // Beams: continuous lines to the target.
     for (const tw of towers) {
@@ -651,24 +678,193 @@ export function createRenderer(canvas) {
   }
 
   function drawTowerLetter(tw, fx, t) {
-    const col = elementColor(tw.element, tw.spec?.color);
+    const arch = tw.spec?.archetype;
+    let col = elementColor(tw.element, tw.spec?.color);
+    // flash red and jolt when hit
+    const hit = fx.hitAge(tw.id);
+    let px = X(tw.x), py = Y(tw.y);
+    if (hit < 0.24) {
+      const k = 1 - hit / 0.24;
+      px += (Math.random() - 0.5) * S * 0.1 * k; py += (Math.random() - 0.5) * S * 0.06 * k;
+      if (k > 0.45 && !tw.disabled) col = '#e8452c';
+    }
+    if (arch === 'trap') {
+      drawTrap(px, py, tw.word[0], col, fx.snapAge(tw.id), tw.cooldown > 0, tw.disabled);
+      return;
+    }
     const spr = letterSprite(tw.word[0], col, S, dpr, tw.disabled);
     const age = fx.stampAge(tw.id);
-    let sc = 1, lift = 0;
-    if (age < 0.32) { const k = 1 - age / 0.32; sc = 1 + k * k * 0.25; lift = -k * k * S * 0.35; }
+    let sc = arch === 'wall' ? 0.8 : 1, lift = arch === 'wall' ? -S * 0.12 : 0;
+    if (age < 0.32) { const k = 1 - age / 0.32; sc *= 1 + k * k * 0.25; lift -= k * k * S * 0.35; }
     const size = spr.css * sc;
     ctx.save();
-    if (tw.disabled) ctx.globalAlpha = 0.6;
-    ctx.drawImage(spr.canvas, X(tw.x) - size / 2, Y(tw.y) - size / 2 - LETTER_UP * S + lift, size, size);
+    if (tw.disabled) ctx.globalAlpha = 0.75;
+    ctx.drawImage(spr.canvas, px - size / 2, py - size / 2 - LETTER_UP * S + lift, size, size);
     ctx.restore();
-    tw.__lw = spr.letterW;
-    tw.__asc = spr.asc;
+    if (arch === 'wall') drawWallBase(px, py, tw.disabled); // in front of the letter's foot: it stands behind the barrier
+    tw.__lw = spr.letterW * sc;
+    tw.__asc = spr.asc * sc + (arch === 'wall' ? S * 0.24 : 0);
+  }
+
+  /** Low stone barrier across the path cell; the wall letter stands on top of it. */
+  function drawWallBase(px, py, disabled) {
+    const w = S * 0.62, top = py + S * 0.1, h = S * 0.34, d = S * 0.12; // half-width, top edge, front height, extrusion
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.17)';
+    rr(px - w + SHADOW_DIR.x * S * 0.3, top + SHADOW_DIR.y * S * 0.3, w * 2, h + d, S * 0.05); ctx.fill();
+    // extrusion to the lower-left, then the face
+    ctx.fillStyle = disabled ? '#9c9c9c' : '#857c6f';
+    rr(px - w - d * 0.85, top + d * 0.85, w * 2, h, S * 0.05); ctx.fill();
+    ctx.fillStyle = disabled ? '#cacaca' : '#bcb5a9';
+    rr(px - w, top, w * 2, h, S * 0.05); ctx.fill();
+    ctx.save();
+    ctx.clip();
+    ctx.strokeStyle = 'rgba(60,50,40,0.25)';
+    ctx.lineWidth = 1.1;
+    for (let k = -h; k < w * 2; k += S * 0.075) { ctx.beginPath(); ctx.moveTo(px - w + k, top + h); ctx.lineTo(px - w + k + h, top); ctx.stroke(); }
+    // stone courses
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = Math.max(1, S * 0.025);
+    const rows = 2, bw = S * 0.3;
+    for (let r = 0; r <= rows; r++) {
+      const y = top + (r * h) / rows;
+      ctx.beginPath(); ctx.moveTo(px - w, y); ctx.lineTo(px + w, y); ctx.stroke();
+      if (r === rows) break;
+      for (let x = px - w + (r % 2 ? bw / 2 : bw); x < px + w; x += bw) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h / rows); ctx.stroke(); }
+    }
+    ctx.restore();
+    ctx.strokeStyle = disabled ? '#8a8a8a' : '#6f675c';
+    ctx.lineWidth = Math.max(1.5, S * 0.035);
+    rr(px - w, top, w * 2, h, S * 0.05); ctx.stroke();
+    ctx.restore();
+  }
+
+  /** Flat letter tile lying on the path with jaws that snap shut when the trap fires. */
+  function drawTrap(px, py, letter, col, snapAge, rearming, disabled) {
+    const half = S * 0.3;
+    // 0 = open … 1 = shut: slam in 0.08 s, ease back open by 0.4 s
+    const snap = snapAge < 0.08 ? snapAge / 0.08 : snapAge < 0.4 ? 1 - (snapAge - 0.08) / 0.32 : 0;
+    const open = S * 0.42 - (S * 0.42 - S * 0.12) * snap;
+    ctx.save();
+    // tile
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    rr(px - half - S * 0.05, py - half + S * 0.05, half * 2, half * 2, 3); ctx.fill();
+    ctx.fillStyle = disabled ? '#d2d4d9' : '#f1e4c1';
+    rr(px - half, py - half, half * 2, half * 2, 3); ctx.fill();
+    ctx.strokeStyle = disabled ? '#9a9da5' : col; ctx.lineWidth = Math.max(1.5, S * 0.035); ctx.stroke();
+    ctx.fillStyle = disabled ? '#888' : '#111';
+    ctx.font = `900 ${S * 0.42}px ${HEAVY}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(letter || '?').toUpperCase(), px, py + S * 0.02);
+    // jaws: a toothed bar above and below, closing on the tile when it fires
+    const jawCol = disabled ? '#a9abb0' : rearming ? '#8d9096' : '#3a3c42';
+    ctx.fillStyle = jawCol;
+    for (const dir of [-1, 1]) {
+      const y = py + dir * open;
+      ctx.fillRect(px - S * 0.38, y - (dir < 0 ? S * 0.06 : 0), S * 0.76, S * 0.06);
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const x0 = px - S * 0.38 + i * S * 0.152;
+        ctx.moveTo(x0, y); ctx.lineTo(x0 + S * 0.076, y - dir * S * 0.13); ctx.lineTo(x0 + S * 0.152, y);
+      }
+      ctx.fill();
+    }
+    if (snap > 0.5) { ctx.strokeStyle = `rgba(232,69,44,${snap * 0.8})`; ctx.lineWidth = 3; rr(px - half - 3, py - half - 3, half * 2 + 6, half * 2 + 6, 4); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  /** Swirling spiral disc under a vortex tower. */
+  function drawVortex(tw, t) {
+    const R = tw.stats.range * S, cx = X(tw.x), cy = Y(tw.y);
+    const col = elementColor(tw.element);
+    drawDisc(tw.x, tw.y, tw.stats.range, col, tw.disabled ? 0.06 : 0.1);
+    if (tw.disabled) return;
+    ctx.save();
+    ctx.strokeStyle = rgba(col, 0.35);
+    ctx.lineCap = 'round';
+    for (let arm = 0; arm < 4; arm++) {
+      const a0 = -t * 1.6 + arm * (TAU / 4);
+      ctx.lineWidth = Math.max(1.5, S * 0.05);
+      ctx.beginPath();
+      for (let i = 0; i <= 24; i++) {
+        const f = i / 24, r = R * (0.12 + 0.82 * f), a = a0 + f * 2.6;
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Orbs (blades) circling an orbit tower: one lap per 1.5 s at radius stats.range. */
+  function drawOrbs(tw, state) {
+    const n = Math.max(1, Math.min(4, Math.round(tw.stats?.orbs || 1)));
+    const R = (tw.stats?.range || 1.2) * S, cx = X(tw.x), cy = Y(tw.y); // engine geometry: hits happen here
+    const base = tw.orbAngle ?? ((state.time || 0) / 1.5) * TAU;
+    const col = elementColor(tw.element);
+    ctx.save();
+    const dark = mixHex(col, '#000000', 0.35);
+    ctx.setLineDash([2, 5]);
+    ctx.strokeStyle = rgba(dark, 0.45);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      const a = base + (i / n) * TAU;
+      ctx.strokeStyle = rgba(col, 0.5);
+      ctx.lineWidth = S * 0.09;
+      ctx.beginPath(); ctx.arc(cx, cy, R, a - 0.8, a); ctx.stroke();
+      const ox = cx + Math.cos(a) * R, oy = cy + Math.sin(a) * R;
+      ctx.save();
+      ctx.translate(ox, oy); ctx.rotate(a * 3);
+      ctx.fillStyle = col;
+      ctx.strokeStyle = dark;
+      ctx.lineWidth = 1.2;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      for (let b = 0; b < 3; b++) { const ba = (b / 3) * TAU; ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ba) * S * 0.22, Math.sin(ba) * S * 0.22); ctx.lineTo(Math.cos(ba + 1) * S * 0.1, Math.sin(ba + 1) * S * 0.1); ctx.closePath(); }
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(0, 0, S * 0.035, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  /** Lobbed mortar shell: ground shadow + shell raised on an arc. */
+  function drawShell(p) {
+    let l = lobs.get(p.id);
+    if (!l) { l = { x: p.sx ?? p.x, y: p.sy ?? p.y }; lobs.set(p.id, l); }
+    const total = Math.hypot(p.tx - l.x, p.ty - l.y) || 1;
+    const prog = Math.max(0, Math.min(1, p.flight ? p.age / p.flight : 1 - Math.hypot(p.tx - p.x, p.ty - p.y) / total));
+    const hgt = Math.sin(prog * Math.PI) * S * (0.5 + total * 0.22);
+    const gx = X(p.x), gy = Y(p.y);
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = `rgba(217,72,43,${0.25 + prog * 0.45})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(X(p.tx), Y(p.ty), S * (0.5 - prog * 0.2), 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(0,0,0,${0.12 + prog * 0.12})`;
+    ctx.beginPath(); ctx.ellipse(gx, gy, S * (0.06 + 0.06 * prog), S * (0.03 + 0.03 * prog), 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#34363b';
+    ctx.beginPath(); ctx.arc(gx, gy - hgt, S * 0.1, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#f07a1e';
+    ctx.beginPath(); ctx.arc(gx + S * 0.03, gy - hgt - S * 0.03, S * 0.035, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function rr(x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
   }
 
   function drawTowerLabel(tw) {
     const px = X(tw.x), py = Y(tw.y);
-    const lw = tw.__lw || S * 1.5;
-    const top = py - LETTER_UP * S - (tw.__asc || S * 1.45) / 2;
+    const trap = tw.spec?.archetype === 'trap';
+    const lw = trap ? S * 0.6 : tw.__lw || S * 1.5;
+    const top = trap ? py - S * 0.34 : py - LETTER_UP * S - (tw.__asc || S * 1.45) / 2;
     drawAsterisk(ctx, px + lw / 2 + S * 0.06, top + S * 0.04, Math.max(3.5, S * 0.09), tw.disabled ? '#777' : '#111');
     ctx.save();
     ctx.textAlign = 'center';
@@ -679,7 +875,7 @@ export function createRenderer(canvas) {
     const maxW = S * 1.9;
     const w = ctx.measureText(word).width;
     if (w > maxW) { fs = Math.max(7, fs * maxW / w); ctx.font = `700 ${fs}px ${SANS}`; }
-    const by = py + S * 0.3;
+    const by = py + S * (trap ? 0.56 : 0.3);
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 3;
@@ -700,7 +896,7 @@ export function createRenderer(canvas) {
       }
     }
     ctx.restore();
-    if (tw.maxHp > 0 && tw.hp < tw.maxHp) hpBar(px, by + S * 0.08, S * 0.6, tw.hp / tw.maxHp, false);
+    if (tw.maxHp > 0 && tw.hp < tw.maxHp) hpBar(px, by + S * 0.08, S * 0.7, tw.hp / tw.maxHp, false, 4);
     if (tw.shield > 0) {
       ctx.strokeStyle = 'rgba(90,169,214,0.75)';
       ctx.lineWidth = 2;
@@ -708,8 +904,8 @@ export function createRenderer(canvas) {
     }
   }
 
-  function hpBar(cx, y, w, frac, boss) {
-    const h = boss ? Math.max(5, S * 0.07) : 3;
+  function hpBar(cx, y, w, frac, boss, thick = 3) {
+    const h = boss ? Math.max(5, S * 0.07) : thick;
     frac = Math.max(0, Math.min(1, frac));
     ctx.fillStyle = 'rgba(90,92,98,0.75)';
     ctx.fillRect(cx - w / 2, y, w, h);
@@ -739,6 +935,7 @@ export function createRenderer(canvas) {
       color, flip: look.piece === 'knight' && v.ux > 0.2,
       alpha: look.ghost ? (e.revealed ? 0.6 : 0.28) : 1, dashed: look.ghost, halo: !ghost,
     });
+    if (look.sling) drawSling(ctx, px, py - bob, h, color, t + e.id);
     if (look.band) {
       ctx.fillStyle = '#a3a8b0';
       ctx.fillRect(px - h * 0.2, py - bob - h * 0.47, h * 0.4, h * 0.06);

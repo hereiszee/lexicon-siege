@@ -24,12 +24,12 @@ export default [
  alchemy alchemist alchemists cauldron transmutation quintessence ambrosia nectar soma
  caldron vial vials`, M),
   C('wands', 'rapid', 'arcane', 'slow:0.5', 'magic item', '🪄', 'Zaps foes with rapid sparks of magic',
-    `wand wands staff staffs staves scepter scepters sceptre orb orbs relic relics artifact artifacts artefact
+    `wand wands staff staffs staves scepter scepters sceptre   relic relics artifact artifacts artefact
  artefacts grimoire talisman talismans totem totems fetish runestone runestones phylactery
  athame chalice grail`, M),
   C('wards', 'support', 'arcane', 'shield', 'magic protection', '🔮', 'Wards nearby towers with sigils',
-    `ward wards warding amulet amulets charm charms barrier barriers protection
- protections sanctum sanctums circle pentacle pentagram aegis safeguard bulwark talismanic
+    `ward wards warding amulet amulets charm charms   protection
+ protections sanctum sanctums circle pentacle pentagram aegis safeguard  talismanic
  ring`, M),
   C('clergy', 'support', 'light', 'heal', 'holy person', '✝', 'Prays over nearby towers to heal them',
     `priest priests priestess priestesses cleric clerics monk monks nun nuns friar friars abbot abbots abbess
@@ -55,12 +55,12 @@ export default [
   C('ghosts', 'snipe', 'shadow', 'slow', 'dark ghost', '👻', 'Drifts unseen and chills distant foes',
     `ghost ghosts spirit spirits specter specters spectre spectres phantom phantoms wraith wraiths spook
  spooks poltergeist poltergeists banshee banshees apparition apparitions haunt haunting haunts shade
- soul souls wisp wisps ectoplasm phantasm doppelganger`, M),
+ soul souls   ectoplasm phantasm doppelganger`, M),
   C('demons', 'blast', 'fire', 'burn', 'dark demon fire', '😈', 'Unleashes hellfire on the path',
     `demon demons devil devils fiend fiends imp imps succubus incubus daemon daemons archfiend archdevil
  lucifer satan beelzebub balrog hellspawn ifrit efreet djinn djinni jinn genie genies oni cacodemon
  abomination`, M),
-  C('fae', 'support', 'nature', 'buff.rate', 'magic fae nature', '🧚', 'Sprinkles fairy dust that quickens nearby towers',
+  C('fae', 'orbit', 'nature', 'slow:0.6', 'magic fae nature', '🧚', 'Sends fairies flitting in circles, nipping and dusting foes',
     `fairy fairies faerie faeries fae pixie pixies sprite sprites elf elves elven nymph nymphs dryad dryads sylph
  sylphs brownie brownies leprechaun leprechauns gnome gnomes hobgoblin hob puck kelpie selkie naiad
  naiads undine fairyland
@@ -77,7 +77,7 @@ export default [
  dragonet salamander`, M),
   C('mythic', 'bolt', 'arcane', 'crit stun:0.4', 'monster myth', '🦄', 'Strikes with mythic power',
     `griffin griffins griffon griffons gryphon gryphons phoenix phoenixes sphinx sphinxes minotaur minotaurs
- cerberus medusa gorgon gorgons harpy harpies siren sirens mermaid mermaids merman mermen cockatrice
+ cerberus medusa gorgon gorgons harpy harpies   mermaid mermaids merman mermen cockatrice
  roc rocs kirin qilin thunderbird yeti bigfoot werecat lamia monster monsters creature creatures
  hippogriff`, M),
   C('dreams', 'aura', 'arcane', 'slow stun:0.5', 'magic sleep mind', '💤', 'Lulls nearby foes toward sleep',
@@ -98,10 +98,10 @@ export default [
   C('clocks', 'support', 'arcane', 'buff.rate', 'time machine', '⏰', 'Keeps nearby towers firing on the beat',
     `clock clocks timer timers hourglass hourglasses sundial sundials stopwatch  alarms
  metronome metronomes chronometer chronometers pendulum pendulums timepiece timepieces watch watches
- wristwatch clockmaker watchmaker tick tock chime
+ wristwatch clockmaker watchmaker tick tock 
  dial`, M),
   C('cosmic', 'aura', 'arcane', 'crit:0.6 slow:0.4', 'cosmos magic', '🌌', 'Bends cosmic forces around itself',
-    `infinity singularity wormhole wormholes dimension dimensions multiverse spacetime cosmic void quantum
+    `infinity    dimension dimensions multiverse spacetime cosmic  quantum
  antimatter neutron neutrino `, M),
   C('nuclear', 'aura', 'fire', 'burn poison:0.6', 'science nuclear fire', '☢', 'Irradiates everything nearby',
     `atom atoms atomic nuclear reactor reactors radiation radioactivity isotope isotopes fission fusion

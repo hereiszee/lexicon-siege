@@ -1,64 +1,88 @@
 // Wave generation and threat accounting.
 //
-// Every wave gets an HP budget  B(d) · (1 + perWave·w)  where B(d) grows as a power of the
-// difficulty d (≈ d^TUNING.hpExp: flat in the tutorial, steep early, flattening late). Budgets are split across 1–3 enemy
-// groups; long-range scaling goes partly into enemy count and partly into hpMul so counts
-// stay readable. Bosses close every 10th level; mini-bosses appear later on.
+// Budgets are in "pressure": effective HP per second an enemy spends on its path
+// (count · effHp · speed / pathLength). A level's pressure depends only on its difficulty,
+// so path length, two paths, enemy mix and bosses can't make one level spike above its
+// neighbours: longer paths and slower enemies get proportionally more HP, and bosses and
+// mini-bosses take a share of their wave's budget instead of adding to it.
+//
+// A level's total budget is baseLevelHp · G(d): G grows ~exponentially at hpRate0 per level at
+// first (a gentle tutorial), turning into a power law d^hpExp later. It is split over the
+// waves in proportion to (1 + perWave·w) · ramp(w), ramp rising linearly from firstWaveHp to 1
+// (Bloons-style: wave 1 trivial, each wave a little harder), so adding a wave never adds a
+// step in total threat. Each new enemy type is introduced on its unlock level as a small group
+// of its own in wave 2, then mixes in.
 
 import { ENEMIES } from '../core/constants.js';
 
 /** Balance knobs — tune these in the balance pass. */
 export const TUNING = {
-  baseWaveHp: 120,      // wave-1 HP budget at difficulty 1
-  hpExp: 0.66,          // long-range growth of the budget = ((d + hpOffset) / (1 + hpOffset))^hpExp
-  hpOffset: 1.76,       //   (≈49× at 1000, ≈11× at 100; the offset keeps the tutorial levels flat)
-  perWave: 0.32,        // within-level ramp: wave w has budget × (1 + perWave·w)
-  firstWaveHp: 0.42,    // hpMul of the first wave relative to the last (linear in between), so
-                        // the long-range growth bites as the level goes on, not before wave 1
-  twoPathHp: 0.75,      // budget multiplier on two-path levels (defences are split across both)
-  hpShare: 0.9,         // fraction of long-range growth (in log space) that goes into hpMul; the rest
-                        // adds enemies, and with them bounty ink, so keep it high
-  minWaves: 5,
-  extraWaves: 17,       // waves → minWaves + extraWaves·(1 − e^(−d/waveScale))
-  waveScale: 300,
+  baseLevelHp: 2500,    // whole-level HP budget at difficulty 1 on a reference path
+  hpRate0: 0.05,        // growth G(d) = exp(hpExp · asinh(hpRate0·(d−1)/hpExp)): +5%/level at first,
+  hpExp: 1.46,          //   ≈ d^1.46 later (≈17× at 100, ≈175× at 500, ≈480× at 1000)
+  perWave: 0.32,        // within-level shape: wave w gets a share ∝ (1 + perWave·w) · ramp(w)
+  firstWaveHp: 0.15,    // ramp(w) rises linearly from this (wave 1) to 1 (last wave); also scales hpMul
+  refPathLen: 39,       // path length (cells travelled) the budget is quoted for; ≈ the average path
+  refSpeed: 1.2,        // enemy speed the budget is quoted for (a grunt)
+  twoPathHp: 0.55,      // pressure multiplier on two-path levels (defences are split across both)
+  hpShare: 0.85,        // fraction of the per-wave budget growth (in log space) that goes into hpMul;
+                        // the rest adds enemies, and with them bounty ink
+  minWaves: 6,          // waves → minWaves + extraWaves·((d − 1)/999)^waveExp  (6 → 25)
+  extraWaves: 19,
+  waveExp: 0.75,
   speedGrowth: 0.3,     // speedMul reaches 1 + speedGrowth at difficulty 1000
-  bossHpExp: 0.75,      // boss hpMul = bossHpMul · growth^bossHpExp (split between twin bosses)
-  bossHpMul: 2,
+  bossShare: 0.35,      // share of the boss level's final-wave budget taken by the boss
+  miniBossShare: 0.3,   // share of a wave's budget taken by a mini-boss
   miniBossFrom: 150,    // first difficulty with mini-bosses
+  introMax: 12,         // largest group a newly unlocked enemy is introduced with
+  earlyTypes: 3,        // Bloons-style: wave w prefers the first max(earlyTypes, unlocked·((w+1)/waves)²)
+                        // types in unlock order, so a level's early waves are the easy kinds
   maxCount: 40,
 };
 
-/** Difficulty at which each enemy type starts appearing, in introduction order. */
+/** Difficulty at which each enemy type starts appearing, in introduction order (one per level, never on a boss level). */
 export const ENEMY_UNLOCK = {
-  grunt: 1, runner: 3, swarm: 6, tank: 12, armored: 20, stealth: 30,
-  healer: 40, vandal: 55, splitter: 70, flyer: 85,
+  grunt: 1, runner: 3, vandal: 7, swarm: 12, slinger: 18, tank: 26, armored: 37,
+  healer: 49, stealth: 63, splitter: 79, flyer: 97,
 };
 
 /** Base spawn intervals (seconds) per enemy type. */
 const INTERVAL = {
   grunt: 0.9, runner: 0.6, swarm: 0.3, tank: 1.8, armored: 1.3, stealth: 0.9,
-  healer: 1.6, vandal: 1.4, splitter: 1.3, flyer: 0.7, boss: 0,
+  healer: 1.6, vandal: 1.4, slinger: 1.3, splitter: 1.3, flyer: 0.7, boss: 0,
 };
 
-/** Rough per-trait difficulty factor used for effective HP. */
-const TRAIT_FACTOR = { stealth: 1.25, healer: 1.3, vandal: 1.15, flyer: 1.1, boss: 1 };
+/** Rough per-trait difficulty factor used for effective HP (boss: stomp + 10-life leak). */
+const TRAIT_FACTOR = { stealth: 1.25, healer: 1.3, vandal: 1.6, slinger: 1.6, flyer: 1.1, boss: 1.5 };
 
 const round2 = (v) => Math.round(v * 100) / 100;
 
+const wavesExact = (d) => TUNING.minWaves + TUNING.extraWaves * Math.pow((Math.max(1, d) - 1) / 999, TUNING.waveExp);
+
 export function waveCountFor(d) {
-  return Math.round(TUNING.minWaves + TUNING.extraWaves * (1 - Math.exp(-(d - 1) / TUNING.waveScale)));
+  return Math.round(wavesExact(d));
 }
 
-/** Long-range growth factor (1 at d=1). */
-export const growthFor = (d) => Math.pow((Math.max(1, d) + TUNING.hpOffset) / (1 + TUNING.hpOffset), TUNING.hpExp);
+/** Long-range growth of the whole-level budget (1 at d=1). */
+export const growthFor = (d) => Math.exp(TUNING.hpExp * Math.asinh(TUNING.hpRate0 * (Math.max(1, d) - 1) / TUNING.hpExp));
 
+/** Enemy hp multiplier of a level's last wave: follows the per-wave budget growth. */
 export function hpMulFor(d) {
-  return round2(Math.pow(growthFor(d), TUNING.hpShare));
+  return round2(Math.max(1, Math.pow(growthFor(d) * TUNING.minWaves / wavesExact(d), TUNING.hpShare)));
 }
 
 export function speedMulFor(d) {
   return round2(1 + TUNING.speedGrowth * (d - 1) / 999);
 }
+
+/**
+ * Tower hp doesn't grow with the level, so tower damage mustn't grow with the budget: slinger shots
+ * and boss stomps scale with hpMul, vandal bites are flat. Effective HP grows as hpMul^hpPow.
+ */
+const hpPow = (type) => {
+  const t = ENEMIES[type].traits;
+  return t.includes('slinger') || t.includes('stomp') ? 2 : t.includes('vandal') ? 1.5 : 1;
+};
 
 /** Effective HP of one enemy of `type` with hpMul (armor and traits included). */
 export function effectiveHp(type, hpMul = 1) {
@@ -66,12 +90,19 @@ export function effectiveHp(type, hpMul = 1) {
   if (!e) return 0;
   let hp = e.hp * hpMul * (1 + e.armor * 0.08);
   for (const t of e.traits) hp *= TRAIT_FACTOR[t] || 1;
+  if (!e.traits.includes('boss')) hp *= e.leak; // a tank that slips through costs 2 lives
+  hp *= Math.max(1, hpMul) ** (hpPow(type) - 1);
   if (e.traits.includes('splitter')) hp += 3 * effectiveHp('swarm', hpMul);
   return hp;
 }
 
 function unlockedAt(d) {
   return Object.keys(ENEMY_UNLOCK).filter((t) => ENEMY_UNLOCK[t] <= d);
+}
+
+/** Enemy types first unlocked at exactly this difficulty (at most one). */
+export function newEnemiesAt(d) {
+  return Object.keys(ENEMY_UNLOCK).filter((t) => ENEMY_UNLOCK[t] === d);
 }
 
 /** Type weights for a difficulty: newly unlocked types are featured for a few levels. */
@@ -89,85 +120,96 @@ function typeWeights(d, unlocked) {
  * Build the wave list.
  * @param rng  makeRng instance
  * @param d    difficulty 1..1000
- * @param opts { boss:boolean, pathCount:1|2 }
+ * @param opts { boss:boolean, pathLengths:number[] (cells travelled per path) }
  */
-export function generateWaves(rng, d, { boss = false, pathCount = 1 } = {}) {
-  const count = Math.max(TUNING.minWaves, waveCountFor(d) + (d > 20 ? rng.int(-1, 1) : 0));
-  const growth = growthFor(d);
+export function generateWaves(rng, d, { boss = false, pathLengths = [TUNING.refPathLen] } = {}) {
+  const pathCount = pathLengths.length;
+  const count = waveCountFor(d);
   const pathHp = pathCount > 1 ? TUNING.twoPathHp : 1;
-  const levelHpMul = hpMulFor(d) * pathHp;
+  const levelHpMul = hpMulFor(d);
   const baseSpeed = speedMulFor(d);
-  const intervalMul = 1 - 0.3 * (d - 1) / 999;
+  const intervalMul = 1 - 0.5 * (d - 1) / 999; // denser spawns late keep long levels short
   const unlocked = unlockedAt(d);
   const weights = typeWeights(d, unlocked);
-  const newest = unlocked.filter((t) => d - ENEMY_UNLOCK[t] < 5 && t !== 'grunt');
+  const intro = newEnemiesAt(d).filter((t) => t !== 'grunt')[0];
   let pathCursor = rng.int(0, pathCount - 1);
+  // HP that `pressure` buys for an enemy of `type` moving at `speed` cells/s (before baseSpeed) on path p
+  const hpFor = (pressure, p, speed) => pressure * pathHp * (pathLengths[p] / TUNING.refPathLen) * (TUNING.refSpeed / speed);
+  const rampOf = (w) => TUNING.firstWaveHp + (1 - TUNING.firstWaveHp) * w / Math.max(1, count - 1);
+  const shapeOf = (w) => (1 + TUNING.perWave * w) * rampOf(w);
+  let shapeSum = 0;
+  for (let w = 0; w < count; w++) shapeSum += shapeOf(w);
+  // reference pressure of the whole level: HP on a reference path at reference speed
+  const levelBudget = TUNING.baseLevelHp * growthFor(d);
   const waves = [];
 
   for (let w = 0; w < count; w++) {
     const last = w === count - 1;
-    const ramp = TUNING.firstWaveHp + (1 - TUNING.firstWaveHp) * w / Math.max(1, count - 1);
-    const hpMul = round2(Math.max(1, levelHpMul * ramp));
-    const budget = TUNING.baseWaveHp * growth * (1 + TUNING.perWave * w) * (hpMul / levelHpMul) * pathHp;
-    // Group types for this wave
-    let nGroups = 1 + (w >= count / 3 ? 1 : 0) + (w >= (2 * count) / 3 && d > 30 ? 1 : 0);
-    nGroups = Math.min(nGroups, unlocked.length);
-    const types = [];
-    // skip types so weak that the budget would need more than 2× the count cap of them
-    const maxShare = nGroups === 1 ? 1 : 0.7; // largest share a group can get below
-    const fits = ([k]) => budget * maxShare / effectiveHp(k, hpMul) <= TUNING.maxCount * 2;
-    if (w === 0) {
-      const easy = ['grunt', 'runner', 'swarm'].filter((k) => unlocked.includes(k) && fits([k]));
-      types.push(d < 40 || !easy.length ? 'grunt' : rng.pick(easy));
-    } else if (w === 1 && newest.length) types.push(rng.pick(newest)); // show the new enemy early
-    while (types.length < nGroups) {
-      const free = weights.filter(([k]) => !types.includes(k));
-      const pool = free.filter(fits);
-      const t = rng.weighted(pool.length ? pool : free);
-      types.push(t);
-    }
-    // Split budget: first group largest
-    const shares = types.map((_, i) => (i === 0 ? 1.6 : 1) * rng.float(0.8, 1.2));
-    const shareSum = shares.reduce((a, b) => a + b, 0);
+    const hpMul = round2(Math.max(1, levelHpMul * rampOf(w)));
+    let budget = levelBudget * shapeOf(w) / shapeSum;
     const groups = [];
     let delay = 0;
-    types.forEach((type, i) => {
-      const per = effectiveHp(type, hpMul);
-      const raw = (budget * shares[i]) / shareSum / per;
-      const n = Math.max(1, Math.min(TUNING.maxCount, Math.round(raw)));
-      // if the count cap bites, put the excess budget into hp instead
-      const gMul = raw > TUNING.maxCount ? round2(hpMul * raw / TUNING.maxCount) : hpMul;
+    const addGroup = (type, pressure, maxCount = TUNING.maxCount, maxBoost = 2) => {
+      const speedMul = round2(baseSpeed * rng.float(0.95, 1.05));
+      const raw = hpFor(pressure, pathCursor, ENEMIES[type].speed * speedMul / baseSpeed) / effectiveHp(type, hpMul);
+      const n = Math.max(1, Math.min(maxCount, Math.round(raw)));
+      // rounding and the count cap go into hp, so the wave keeps its exact budget (capped at maxBoost×)
+      const gMul = round2(Math.max(0.05, hpMul * Math.min(raw / n, maxBoost) ** (1 / hpPow(type))));
       const interval = round2(INTERVAL[type] * intervalMul * rng.float(0.9, 1.1));
-      groups.push({
-        enemy: type, count: n, interval, delay: round2(delay),
-        path: pathCursor, hpMul: gMul, speedMul: round2(baseSpeed * rng.float(0.95, 1.05)),
-      });
+      groups.push({ enemy: type, count: n, interval, delay: round2(delay), path: pathCursor, hpMul: gMul, speedMul });
       if (pathCount > 1) pathCursor = (pathCursor + 1) % pathCount;
       delay += n * interval * 0.5 + rng.float(1, 3);
-    });
+    };
 
-    // Mini-boss mid/late in long levels
-    const miniBossWave = d >= TUNING.miniBossFrom && !last && w >= count / 2 &&
-      rng.chance(0.12 + 0.18 * Math.min(1, (d - TUNING.miniBossFrom) / 600));
-    if (miniBossWave) {
-      groups.push({
-        enemy: 'boss', count: 1, interval: 0, delay: round2(delay), path: pathCursor,
-        hpMul: round2(Math.pow(growth, TUNING.bossHpExp) * 0.35 * (1 + 0.04 * w)),
-        speedMul: round2(baseSpeed * 1.1), miniBoss: true,
-      });
-      if (pathCount > 1) pathCursor = (pathCursor + 1) % pathCount;
+    // Specials take their share of the wave budget (never add to it)
+    const special = [];
+    if (last && boss) special.push(['boss', TUNING.bossShare]);
+    else if (d >= TUNING.miniBossFrom && w >= count / 2 &&
+      rng.chance(0.12 + 0.18 * Math.min(1, (d - TUNING.miniBossFrom) / 600))) special.push(['miniBoss', TUNING.miniBossShare]);
+    for (const [, share] of special) budget *= 1 - share;
+
+    if (intro && w === 1) {
+      addGroup(intro, budget, TUNING.introMax, Infinity); // the new type alone, in a small (tougher) group
+    } else {
+      // Group types for this wave
+      let nGroups = 1 + (w >= count / 3 ? 1 : 0) + (w >= (2 * count) / 3 && d > 30 ? 1 : 0);
+      const pool0 = unlocked.filter((t) => w > 1 || t !== intro); // nothing new before its intro
+      nGroups = Math.min(nGroups, pool0.length);
+      const types = [];
+      // skip types so weak that the budget would need more than the count cap of them (a capped
+      // group gets up to 2× hp: a spike, and late fast swarms of them leak)
+      const maxShare = nGroups === 1 ? 1 : 0.7; // largest share a group can get below
+      const fits = ([k]) => hpFor(budget * maxShare, pathCursor, ENEMIES[k].speed) / effectiveHp(k, hpMul) <= TUNING.maxCount;
+      // Bloons-style: prefer the first max(earlyTypes, unlocked·((w+1)/waves)²) types in unlock order,
+      // so a level's early waves are the easy kinds; the newest type mixes in from wave 3
+      const early = Math.max(TUNING.earlyTypes, Math.ceil(unlocked.length * ((w + 1) / count) ** 2));
+      const easyType = ([k]) => unlocked.indexOf(k) < early || k === intro;
+      if (w === 0) {
+        const easy = ['grunt', 'runner', 'swarm'].filter((k) => pool0.includes(k) && fits([k]));
+        types.push(d < 40 || !easy.length ? 'grunt' : rng.pick(easy));
+      }
+      while (types.length < nGroups) {
+        const free = weights.filter(([k]) => pool0.includes(k) && !types.includes(k));
+        const pool = free.filter((e) => fits(e) || e[0] === intro); // the newest type always mixes in
+        const easy = pool.filter(easyType);
+        types.push(rng.weighted(easy.length ? easy : pool.length ? pool : free));
+      }
+      // Split budget: first group largest
+      const shares = types.map((_, i) => (i === 0 ? 1.6 : 1) * rng.float(0.8, 1.2));
+      const shareSum = shares.reduce((a, b) => a + b, 0);
+      types.forEach((type, i) => addGroup(type, (budget * shares[i]) / shareSum));
     }
 
-    // Boss finale
-    if (last && boss) {
-      const bosses = d >= 500 && d % 100 === 0 ? 2 : 1;
-      const bossMul = round2(TUNING.bossHpMul * Math.pow(growth, TUNING.bossHpExp) / bosses);
-      for (let b = 0; b < bosses; b++) {
-        groups.push({
-          enemy: 'boss', count: 1, interval: 0, delay: round2(delay + 4 + b * 6),
-          path: pathCount > 1 ? b % pathCount : 0, hpMul: bossMul, speedMul: round2(baseSpeed), boss: true,
-        });
-      }
+    for (const [kind, share] of special) {
+      const isBoss = kind === 'boss';
+      const pressure = budget / (1 - share) * share;
+      const speedMul = round2(baseSpeed * (isBoss ? 1 : 1.1));
+      const hp = hpFor(pressure, pathCursor, ENEMIES.boss.speed * speedMul / baseSpeed);
+      groups.push({
+        enemy: 'boss', count: 1, interval: 0, delay: round2(delay + (isBoss ? 4 : 0)), path: pathCursor,
+        hpMul: round2(Math.max(0.05, (hp / effectiveHp('boss', 1)) ** (1 / hpPow('boss')))), speedMul, [kind]: true,
+      });
+      if (pathCount > 1) pathCursor = (pathCursor + 1) % pathCount;
     }
     waves.push({ groups });
   }
@@ -176,22 +218,35 @@ export function generateWaves(rng, d, { boss = false, pathCount = 1 } = {}) {
 
 /**
  * Threat summary for the balance pass.
- * @returns { total, perWave:number[], byEnemy:{type:count}, enemies:number }
+ * `pressure` = Σ count · effectiveHp · speed / pathLength over every group: effective HP per
+ * second of time on the path (the DPS a defence needs), with two-path levels counted back up
+ * by 1/twoPathHp. It is what the generator holds smooth and monotone across levels.
+ * @returns { total, perWave:number[], pressure, pressurePerWave:number[], byEnemy:{type:count}, enemies:number }
  */
 export function levelThreat(level) {
   const perWave = [];
+  const pressurePerWave = [];
   const byEnemy = {};
   let enemies = 0;
   // two-path levels get less hp because the defence is split; count that back in as threat
   const pathMul = (level.paths?.length ?? 1) > 1 ? 1 / TUNING.twoPathHp : 1;
   for (const wave of level.waves) {
     let hp = 0;
+    let pr = 0;
     for (const g of wave.groups) {
-      hp += g.count * effectiveHp(g.enemy, g.hpMul);
+      const h = g.count * effectiveHp(g.enemy, g.hpMul);
+      const len = Math.max(1, (level.paths?.[g.path]?.length ?? TUNING.refPathLen + 1) - 1);
+      hp += h;
+      pr += h * (ENEMIES[g.enemy]?.speed ?? 1) * (g.speedMul ?? 1) / len;
       byEnemy[g.enemy] = (byEnemy[g.enemy] || 0) + g.count;
       enemies += g.count;
     }
     perWave.push(Math.round(hp * pathMul));
+    pressurePerWave.push(round2(pr * pathMul));
   }
-  return { total: perWave.reduce((a, b) => a + b, 0), perWave, byEnemy, enemies };
+  return {
+    total: perWave.reduce((a, b) => a + b, 0), perWave,
+    pressure: round2(pressurePerWave.reduce((a, b) => a + b, 0)), pressurePerWave,
+    byEnemy, enemies,
+  };
 }

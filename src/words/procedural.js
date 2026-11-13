@@ -78,14 +78,14 @@ const ROOT_HINTS = [
   ['rain', 'water', 'aura', 'slow', 'weather'], ['limn', 'water', null, null, 'water'],
   ['geo', 'earth', null, 'knockback', 'earth'], ['lith', 'earth', 'blast', 'stun', 'stone'], ['petr', 'earth', null, 'stun', 'stone'],
   ['terra', 'earth', null, 'knockback', 'earth'], ['rock', 'earth', 'blast', 'knockback', 'stone'], ['stone', 'earth', 'blast', 'stun', 'stone'],
-  ['lapid', 'earth', null, null, 'stone'], ['oro', 'earth', 'snipe', null, 'mountain'], ['seism', 'earth', 'aura', 'stun', 'earth'],
+  ['lapid', 'earth', null, null, 'stone'], ['oro', 'earth', 'snipe', null, 'mountain'], ['seism', 'earth', 'pulse', 'stun', 'earth'],
   ['ferr', 'metal', null, 'armorBreak', 'metal'], ['metal', 'metal', null, 'armorBreak', 'metal'], ['chalc', 'metal', null, null, 'metal'],
   ['argent', 'metal', 'harvest', null, 'treasure'], ['plumb', 'metal', null, 'slow', 'metal'], ['steel', 'metal', null, 'pierce', 'metal'],
   ['iron', 'metal', null, 'armorBreak', 'metal'], ['cupr', 'metal', null, null, 'metal'], ['mechan', 'metal', null, 'crit', 'machine'],
   ['electr', 'storm', 'chain', 'stun', 'lightning'], ['fulm', 'storm', 'chain', 'stun', 'lightning'], ['volt', 'storm', 'chain', 'stun', 'lightning'],
-  ['tonitr', 'storm', 'aura', 'stun', 'storm'], ['aer', 'storm', 'snipe', null, 'sky'], ['anem', 'storm', 'rapid', 'knockback', 'wind'],
+  ['tonitr', 'storm', 'pulse', 'stun', 'storm'], ['aer', 'storm', 'snipe', null, 'sky'], ['anem', 'storm', 'rapid', 'knockback', 'wind'],
   ['storm', 'storm', 'chain', 'stun', 'storm'], ['thund', 'storm', 'chain', 'stun', 'storm'], ['baro', 'storm', null, null, 'weather'],
-  ['meteor', 'storm', 'blast', null, 'sky'], ['wind', 'storm', 'rapid', 'knockback', 'wind'],
+  ['meteor', 'fire', 'mortar', 'burn', 'sky'], ['wind', 'storm', 'rapid', 'knockback', 'wind'],
   ['phot', 'light', 'beam', 'reveal', 'light'], ['luc', 'light', null, 'reveal', 'light'], ['lumin', 'light', 'beam', 'reveal', 'light'],
   ['helio', 'light', 'beam', 'burn', 'sun'], ['solar', 'light', 'beam', 'burn', 'sun'], ['radia', 'light', 'aura', null, 'light'],
   ['candesc', 'light', 'beam', 'burn', 'light'], ['gleam', 'light', null, 'reveal', 'light'], ['bright', 'light', null, 'reveal', 'light'],
@@ -122,11 +122,11 @@ const ROOT_HINTS = [
   ['numis', 'metal', 'harvest', 'ink', 'money'], ['commerc', 'metal', 'harvest', 'ink', 'money'], ['money', 'metal', 'harvest', 'ink', 'money'],
   ['gold', 'light', 'harvest', 'ink', 'treasure'], ['aur', 'light', null, null, 'gold'], ['trade', 'metal', 'harvest', 'ink', 'money'],
   ['milit', 'metal', 'summon', null, 'military'], ['legion', 'metal', 'summon', null, 'military'], ['soldi', 'metal', 'summon', null, 'military'],
-  ['army', 'metal', 'summon', null, 'military'], ['war', 'fire', null, 'crit', 'war'], ['bell', 'storm', null, null, 'war'],
+  ['army', 'metal', 'summon', null, 'military'], ['war', 'fire', null, 'crit', 'war'], ['bellum', 'storm', null, null, 'war'],
   ['regal', 'light', 'support', 'buff', 'royal'], ['regn', 'light', 'support', 'buff', 'royal'], ['royal', 'light', 'support', 'buff', 'royal'],
   ['tele', 'storm', 'snipe', null, 'far'], ['scop', 'light', 'snipe', 'reveal', 'sight'], ['vis', 'light', 'snipe', 'reveal', 'sight'],
-  ['opti', 'light', 'snipe', 'reveal', 'sight'], ['phon', 'storm', 'aura', 'stun', 'sound'], ['acous', 'storm', 'aura', 'stun', 'sound'],
-  ['audi', 'storm', 'aura', 'stun', 'sound'], ['sonic', 'storm', 'aura', 'stun', 'sound'], ['kine', 'storm', 'rapid', null, 'motion'],
+  ['opti', 'light', 'snipe', 'reveal', 'sight'], ['phon', 'storm', 'pulse', 'stun', 'sound'], ['acous', 'storm', 'pulse', 'stun', 'sound'],
+  ['audi', 'storm', 'pulse', 'stun', 'sound'], ['sonic', 'storm', 'pulse', 'stun', 'sound'], ['kine', 'storm', 'rapid', null, 'motion'],
   ['dyna', 'storm', 'blast', 'knockback', 'power'], ['dromo', 'storm', 'rapid', null, 'speed'], ['tach', 'storm', 'rapid', null, 'speed'],
   ['mega', 'earth', 'blast', 'splash', 'big'], ['giga', 'earth', 'blast', 'splash', 'big'], ['macro', 'earth', 'blast', 'splash', 'big'],
   ['micro', 'arcane', 'rapid', null, 'small'], ['nano', 'metal', 'rapid', null, 'small'], ['hemo', 'nature', 'support', 'heal', 'blood'],
@@ -140,6 +140,22 @@ const ROOT_HINTS = [
   ['dent', 'metal', 'rapid', 'crit', 'tooth'], ['ortho', 'light', 'support', 'heal', 'medical'], ['ophth', 'light', 'snipe', 'reveal', 'sight'],
   ['chrom', 'light', 'chain', null, 'color'], ['prism', 'light', 'chain', null, 'light'], ['hypn', 'arcane', 'aura', 'stun', 'sleep'],
   ['somn', 'arcane', 'aura', 'slow', 'sleep'], ['dorm', 'arcane', 'aura', 'slow', 'sleep'],
+  // v2 kinds
+  ['mur', 'earth', 'wall', null, 'wall'], ['vall', 'earth', 'wall', null, 'wall'], ['fort', 'earth', 'wall', null, 'wall'],
+  ['barr', 'metal', 'wall', null, 'wall'], ['block', 'earth', 'wall', null, 'wall'], ['fenc', 'nature', 'wall', null, 'wall'],
+  ['gate', 'metal', 'wall', null, 'wall'], ['door', 'earth', 'wall', null, 'wall'], ['brick', 'earth', 'wall', null, 'stone'],
+  ['trap', 'metal', 'trap', 'stun', 'trap'], ['snar', 'metal', 'trap', 'stun', 'trap'], ['laque', 'metal', 'trap', 'slow', 'trap'],
+  ['spik', 'metal', 'trap', 'armorBreak', 'trap'], ['mine', 'fire', 'trap', 'burn', 'trap'], ['pit', 'earth', 'trap', 'stun', 'trap'],
+  ['ballist', 'earth', 'mortar', null, 'siege'], ['bomb', 'fire', 'mortar', 'burn', 'siege'], ['artill', 'earth', 'mortar', null, 'siege'],
+  ['catapult', 'earth', 'mortar', null, 'siege'], ['lob', 'earth', 'mortar', null, 'siege'], ['rocket', 'fire', 'mortar', 'burn', 'sky'],
+  ['vort', 'storm', 'vortex', null, 'vortex'], ['gyr', 'storm', 'vortex', null, 'vortex'], ['whirl', 'water', 'vortex', 'slow', 'vortex'],
+  ['grav', 'arcane', 'vortex', 'slow', 'gravity'], ['magnet', 'metal', 'vortex', 'slow', 'gravity'], ['tract', 'metal', 'vortex', null, 'pull'],
+  ['suct', 'water', 'vortex', null, 'pull'], ['siphon', 'water', 'vortex', null, 'pull'], ['cyclon', 'storm', 'vortex', null, 'vortex'],
+  ['puls', 'storm', 'pulse', 'stun', 'sound'], ['pound', 'earth', 'pulse', 'stun', 'earth'], ['boom', 'storm', 'pulse', 'stun', 'sound'],
+  ['tremo', 'earth', 'pulse', 'stun', 'earth'], ['quak', 'earth', 'pulse', 'stun', 'earth'], ['bell', 'metal', 'pulse', 'stun', 'sound'],
+  ['orb', 'arcane', 'orbit', null, 'orbit'], ['rota', 'metal', 'orbit', null, 'spin'], ['rotor', 'metal', 'orbit', null, 'spin'],
+  ['cycl', 'storm', 'orbit', null, 'spin'], ['circ', 'light', 'orbit', null, 'spin'], ['spher', 'arcane', 'orbit', null, 'orbit'],
+  ['lun', 'light', 'orbit', 'crit', 'moon'], ['spin', 'storm', 'orbit', null, 'spin'], ['wheel', 'metal', 'orbit', null, 'spin'],
 ].map(([s, e, a, fx, tags]) => ({ s, e, a, fx, tags: tags.split(' ') }));
 
 export function rootHints(w) {
@@ -149,7 +165,8 @@ export function rootHints(w) {
 }
 
 // ---------------------------------------------------------------- picking
-const BASE_ARCH = { bolt: 15, blast: 11, snipe: 9, rapid: 11, beam: 9, chain: 9, aura: 9, support: 7, harvest: 7, summon: 8 };
+const BASE_ARCH = { bolt: 8, blast: 8, snipe: 7, rapid: 8, beam: 8, chain: 7, aura: 7, support: 3, harvest: 5, summon: 6,
+  wall: 5, trap: 6, mortar: 5, vortex: 5, pulse: 6, orbit: 6 };
 
 const ELEM_FX = {
   fire: [['burn', 3], ['splash', 1], ['crit', 0.5]],
@@ -196,6 +213,12 @@ const ARCH_PHRASES = {
   support: { heal: 'Mends nearby towers with % warmth', buff: 'Rallies nearby towers with % zeal', shield: 'Wards nearby towers with % barriers' },
   harvest: { ink: 'Distills % ink from thin air', tile: 'Conjures fresh letter tiles from % runes' },
   summon: ['Calls % defenders onto the path', 'Musters % sentinels on the path'],
+  wall: ['Raises a % wall across the path', 'Bars the path with % masonry', 'Plants a % bulwark in the way'],
+  trap: ['Hides a % snare in the path', 'Sets a % trap that springs underfoot', 'Lays a % pit for passing foes'],
+  mortar: ['Lobs % shells over the path', 'Arcs % bombs onto distant foes', 'Rains % payloads from afar'],
+  vortex: ['Churns a % vortex that drags foes back', 'Hauls foes backward with a % pull', 'Spins a % eddy that reels foes in'],
+  pulse: ['Throbs with % shockwaves', 'Booms out rings of % force', 'Pounds the ground with % pulses'],
+  orbit: ['Circles itself with % orbs', 'Spins % motes in a tight ring', 'Whirls % shards around itself'],
 };
 
 export function archPhrase(arch, elem, fxType, sub, rng) {
@@ -239,15 +262,21 @@ export function proceduralTemplate(w, pos, seed) {
   // archetype leanings
   const aw = { ...BASE_ARCH };
   if (ft.L >= 10) { aw.snipe += 5; aw.beam += 4; }
-  if (ft.L <= 4) { aw.rapid += 5; aw.bolt += 4; aw.snipe -= 4; }
-  if (ft.doubles > 0) aw.rapid += 4 * ft.doubles;
+  if (ft.L <= 4) { aw.rapid += 3; aw.bolt += 2; aw.trap += 2; aw.pulse += 2; aw.snipe -= 4; aw.mortar -= 3; }
+  if (ft.L >= 8) { aw.mortar += 3; aw.vortex += 2; }
+  if (ft.doubles > 0) { aw.rapid += 2 * ft.doubles; aw.orbit += 2 * ft.doubles; }
+  const os = (w.match(/o/g) || []).length;
+  if (os >= 2) aw.orbit += 3 * os;                               // round letters → orbs
+  if (ft.maxRun >= 3) aw.wall += 4;                              // consonant clusters stack like bricks
+  if (/^(sw|wh|tw|wr)|(irl|url|wl)/.test(w)) aw.vortex += 6;     // swirly sounds
+  if (/(ump|oom|ong|ash|ang|um)$/.test(w)) aw.pulse += 6;        // booming endings
   if (ft.rare > 0) aw.chain += 4 * ft.rare;
   if (ft.plosRatio > 0.3) aw.blast += 6;
   if (ft.vowelRatio > 0.5) { aw.aura += 4; aw.support += 3; }
   if (pos.includes('adjective')) { aw.aura += 3; aw.beam += 2; }
   if (pos.includes('verb')) { aw.chain += 2; aw.bolt += 2; }
   if (/(er|or|ist|ian|eer|ant|man|men)$/.test(w) && w.length > 4) aw.summon += 8;
-  if (/(ness|ity|ism|ment|ance|ence|tion|sion|hood|dom|ship)$/.test(w)) { aw.aura += 4; aw.support += 4; }
+  if (/(ness|ity|ism|ment|ance|ence|tion|sion|hood|dom|ship)$/.test(w)) { aw.aura += 4; aw.support += 2; aw.pulse += 2; }
   if (/(logy|graph|graphy|ics|scope|meter|gram)$/.test(w)) aw.harvest += 10;
   if (/(age|ery|ary|ory|ure)$/.test(w)) aw.harvest += 3;
   if (hint && hint.a && rng.chance(0.7)) aw[hint.a] += 40;
@@ -269,6 +298,8 @@ export function proceduralTemplate(w, pos, seed) {
     fx.push({ type: 'harvest', sub, mult: rng.float(0.9, 1.05) });
   } else if (arch === 'summon') {
     fx.push({ type: 'summon', sub: null, mult: rng.float(0.85, 1.1) });
+  } else if (arch === 'wall') {
+    if (rng.chance(0.35)) fx.push({ type: rng.weighted(ELEM_FX[elem]), sub: null, mult: rng.float(0.5, 0.8) }); // thorny walls
   } else {
     const roll = rng.next();
     const n = roll < 0.25 ? 0 : roll < 0.8 ? 1 : 2;

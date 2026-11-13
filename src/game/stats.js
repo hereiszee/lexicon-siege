@@ -38,6 +38,7 @@ export function effectStrength(e) {
     case 'shield': return (e.amount || 0) / iv(e.interval);
     case 'harvest': return (e.amount || 0) / iv(e.interval);
     case 'summon': return (e.hp || 0) * (e.damage || 0) * (e.count || 1) / iv(e.interval);
+    case 'interest': return (e.pct || 0) * (e.cap || 0);
     default: return 0;
   }
 }
@@ -71,6 +72,10 @@ export function composeTower(spec, augments, theme = 1) {
     splash: s.splash || 0,
     projectileSpeed: s.projectileSpeed || DEFAULT_PROJECTILE_SPEED,
     hp: s.hp || 1,
+    // v2 archetype extras (defaults when a spec omits them)
+    minRange: s.minRange ?? (spec.archetype === 'mortar' ? 1.5 : 0),
+    pull: s.pull ?? (spec.archetype === 'vortex' ? 0.6 : 0),
+    orbs: s.orbs ?? (spec.archetype === 'orbit' ? 1 : 0),
   };
   const effects = mergeEffects([], spec.effects);
   let element = spec.element;
@@ -102,7 +107,7 @@ export function indexEffects(effects) {
   const fx = {
     burn: null, poison: null, slow: null, freeze: null, stun: null, pierce: null, chain: null,
     splash: null, crit: null, execute: null, armorBreak: null, knockback: null, bounty: null,
-    reveal: null, heal: null, shield: null, summon: null, buffs: [], harvests: [], onHit: false,
+    reveal: null, heal: null, shield: null, summon: null, interest: null, buffs: [], harvests: [], onHit: false,
   };
   for (const e of effects) {
     if (e.type === 'buff') fx.buffs.push(e);

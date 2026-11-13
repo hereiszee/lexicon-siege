@@ -21,7 +21,8 @@ const MASS = new Set(`music wheat lux valor valour heat ether gold silver iron s
   anger fury peace calm patience wisdom knowledge lore magic magick sorcery witchcraft alchemy luck wealth money cash
   treasure loot booty plunder information news advice homework furniture luggage equipment garbage trash rubbish waste
   sewage slime grime filth muck mold mould rust decay rot ammo ammunition gunpowder dynamite napalm shrapnel artillery
-  cavalry infantry livestock cattle poultry police chess golf tennis soccer rugby hockey`.split(/\s+/));
+  cavalry infantry livestock cattle poultry police chess golf tennis soccer rugby hockey flak ordnance gossamer
+  grease slush suction`.split(/\s+/));
 
 const SRC = process.argv[2] || '/usr/share/dict/words';
 const OUT = fileURLToPath(new URL('../data/words.txt', import.meta.url));

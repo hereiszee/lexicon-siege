@@ -22,7 +22,7 @@ export default [
     `soldier soldiers troop troops trooper troopers infantry infantryman infantrymen army armies legion legions
  legionary legionaries legionnaire regiment regiments battalion battalions platoon platoons squad squads
  squadron squadrons militia militias warrior warriors fighter fighters mercenary mercenaries recruit
- recruits veteran veterans grenadier grenadiers musketeer musketeers dragoon dragoons hussar hussars
+ recruits veteran veterans   musketeer musketeers dragoon dragoons hussar hussars
  cavalryman cavalrymen samurai gladiator gladiators paratrooper paratroopers marine marines commando
  commandos conscript conscripts footman footmen rifleman spearman archers berserker
  berserkers viking vikings spartan spartans barbarian barbarians raider raiders horde ninja guerrilla
@@ -34,8 +34,8 @@ export default [
  protectors knighthood chivalry jouster jousters lancelot errant warden`, { stat: { hp: 1.2 } }),
   C('guards', 'support', 'metal', 'shield', 'guard person defense', '💂', 'Stands guard, shielding nearby towers',
     `guard guards guardian guardians sentinel sentinels watchman watchmen bodyguard bodyguards wardens keeper
- keepers gatekeeper gatekeepers bouncer bouncers custodian custodians lookout lookouts patrol patrols
- watch  sentries escort escorts doorman doormen jailer jailers turnkey constable picket
+ keepers     custodian custodians lookout lookouts patrol patrols
+ watch  sentries escort escorts   jailer jailers turnkey constable 
  vigil vigilante vigilantes
  gargoyle
  `),
@@ -47,13 +47,13 @@ export default [
   C('thieves', 'harvest', 'shadow', 'harvest.ink:1.05', 'crime shadow person', '🦹', 'Pilfers ink from the shadows',
     `thief thieves robber robbers burglar burglars bandit bandits brigand brigands outlaw outlaws pickpocket
  pickpockets smuggler smugglers poacher poachers rogue rogues scoundrel scoundrels crook crooks swindler
- swindlers cheat cheats looter looters marauder marauders highwayman highwaymen  fences grifter
+ swindlers cheat cheats looter looters marauder marauders highwayman highwaymen   grifter
  grifters conman conmen racketeer racketeers gangster gangsters mobster mobsters bootlegger forger forgers
  embezzler shoplifter heist heists robbery robberies burglary theft thefts larceny loot plunder pillage
  booty swag`),
   C('pirates', 'bolt', 'water', 'bounty', 'sea crime person', '🏴', 'Plunders foes for extra ink',
     `pirate pirates buccaneer buccaneers corsair corsairs privateer privateers freebooter freebooters
- sea dog seadog cutlass plank parrot
+ sea dog seadog cutlass  parrot
  mutiny`),
   C('sailors', 'summon', 'water', 'summon', 'sea person', '⚓', 'Lands a crew of sailors on the path',
     `sailor sailors seaman seamen mariner mariners seafarer seafarers boatman boatmen navigator navigators
@@ -98,8 +98,8 @@ export default [
  dancers singer singers actor actors actress actresses performer performers entertainer entertainers
  comedian comedians mime mimes puppeteer puppeteers ballerina ballerinas showman storyteller storytellers
  poet poets musician musicians magician fool fools harlequin acrobat circus circuses carnival carnivals
- theater theatre theaters theatres stage stages show shows play plays drama comedy tragedy opera operas
- ballet concert concerts festival festivals parade parades
+ theater theatre theaters theatres stage stages show shows play plays drama comedy tragedy  
+ ballet   festival festivals parade parades
  costume masquerade`),
   C('laborers', 'harvest', 'earth', 'harvest.ink:0.95', 'work person', '🧑', 'Toils away for ink',
     `peasant peasants serf serfs servant servants butler butlers maidservant porter porters steward stewards

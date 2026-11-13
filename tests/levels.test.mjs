@@ -9,7 +9,7 @@ import { hashString, makeRng } from '../src/core/rng.js';
 import { makeLevel, LEVEL_COUNT as GEN_COUNT } from '../src/levels/levelgen.js';
 import { LEVEL_WORDS, CHAPTERS } from '../src/levels/levelWords.js';
 import { pathProblem, fallbackPath, growPath, PATH_STYLES } from '../src/levels/mapgen.js';
-import { levelThreat, ENEMY_UNLOCK, hpMulFor } from '../src/levels/waves.js';
+import { levelThreat, ENEMY_UNLOCK, hpMulFor, TUNING } from '../src/levels/waves.js';
 import { checkWordRules, themeBonus, RULE_TYPES } from '../src/levels/rules.js';
 
 // ---- collaborator: real words module if available, else a stub ----------------------------
@@ -60,7 +60,7 @@ function problems(l, { n = null } = {}) {
   if (!ELEMENTS.includes(l.element)) bad('element');
   if (l.cols !== 16 || l.rows !== 10) bad('grid size');
   if (l.rackSize !== DEFAULTS.rackSize) bad('rackSize');
-  if (!(l.startInk >= DEFAULTS.startInk && l.startInk <= DEFAULTS.startInk * 5.5)) bad('startInk');
+  if (!(l.startInk >= DEFAULTS.startInk && l.startInk <= DEFAULTS.startInk * 8.5)) bad('startInk');
   if (!(l.lives >= DEFAULTS.lives && l.lives <= DEFAULTS.lives * 2)) bad('lives');
   if (!(l.stars.two.livesAtLeast > 0 && l.stars.two.livesAtLeast <= l.stars.three.livesAtLeast && l.stars.three.livesAtLeast <= l.lives)) bad('stars');
 
@@ -234,7 +234,9 @@ test('determinism: same level number → identical level', () => {
 });
 
 test('waves scale with difficulty and enemy types are introduced gradually', () => {
-  assert.equal(LEVELS[0].waves.length, 5);
+  assert.equal(LEVELS[0].waves.length, 6);
+  assert.equal(LEVELS[999].waves.length, 25);
+  for (let i = 1; i < 1000; i++) assert.ok(LEVELS[i].waves.length >= LEVELS[i - 1].waves.length, `wave count drops at ${i + 1}`);
   assert.ok(LEVELS[0].waves.every((w) => w.groups.every((g) => g.enemy === 'grunt')), 'level 1 is all grunts');
   const late = LEVELS.slice(900).reduce((a, l) => a + l.waves.length, 0) / 100;
   assert.ok(late >= 20, `late average wave count ${late}`);
@@ -253,26 +255,61 @@ test('waves scale with difficulty and enemy types are introduced gradually', () 
   assert.ok(LEVELS.slice(0, 149).every((l) => l.paths.length === 1), 'no two-path levels early');
 });
 
-test('threat grows smoothly and roughly geometrically', () => {
+test('enemy unlocks: one at a time through the first ~120 levels, each introduced alone', () => {
+  assert.equal(ENEMY_UNLOCK.vandal, 7);
+  assert.equal(ENEMY_UNLOCK.slinger, 18);
+  const ats = Object.values(ENEMY_UNLOCK);
+  assert.equal(new Set(ats).size, ats.length, 'two unlocks on one level');
+  assert.ok(ats.every((d) => d % 10 !== 0), 'no unlock on a boss level');
+  assert.ok(Math.max(...ats) >= 90 && Math.max(...ats) <= 120);
+  const sorted = ats.slice().sort((a, b) => a - b);
+  for (let i = 1; i < sorted.length; i++) assert.ok(sorted[i] - sorted[i - 1] <= 25, 'unlock gap too long');
+  for (const l of LEVELS) {
+    const want = Object.keys(ENEMY_UNLOCK).filter((t) => ENEMY_UNLOCK[t] === l.difficulty);
+    assert.deepEqual(l.newEnemies, want, `level ${l.id} newEnemies`);
+    const t = l.newEnemies[0];
+    if (!t || t === 'grunt') continue;
+    assert.ok(!l.waves[0].groups.some((g) => g.enemy === t), `${t} before its intro at ${l.id}`);
+    const g = l.waves[1].groups;
+    assert.ok(g.length === 1 && g[0].enemy === t && g[0].count <= TUNING.introMax, `${t} intro wave at ${l.id}`);
+    assert.ok(l.waves.slice(2).some((w) => w.groups.some((x) => x.enemy === t) && w.groups.length > 1), `${t} mixes in at ${l.id}`);
+  }
+  assert.deepEqual(api.levelForWord('zebra', 18).newEnemies, ['slinger']);
+});
+
+test('within a level: trivial first wave, smooth rising ramp', () => {
+  for (const l of LEVELS) {
+    const p = api.levelThreat(l).pressurePerWave;
+    assert.ok(p[0] <= 0.15 * p.at(-1), `${l.id}: first wave ${p[0]} vs last ${p.at(-1)}`);
+    for (let i = 1; i < p.length; i++) assert.ok(p[i] >= p[i - 1] * 1.03 && p[i] <= p[i - 1] * 3, `${l.id}: wave ${i + 1} ramp`);
+  }
+});
+
+test('threat per time-on-path is smooth and monotone across levels', () => {
   const threat = LEVELS.map((l) => api.levelThreat(l));
   for (const t of threat) {
-    assert.ok(t.total > 0 && t.perWave.length > 0);
+    assert.ok(t.total > 0 && t.perWave.length > 0 && t.pressure > 0);
     assert.equal(t.perWave.reduce((a, b) => a + b, 0), t.total);
   }
-  // chapter averages (non-boss levels) never drop by more than 10%
-  const chapterAvg = [];
-  for (let c = 0; c < 100; c++) {
-    const ts = threat.slice(c * 10, c * 10 + 9).map((t) => t.total);
-    chapterAvg.push(ts.reduce((a, b) => a + b) / ts.length);
+  const P = threat.map((t) => t.pressure);
+  // no level (boss, two-path, long/short path or not) deviates > 15% from its ±5 neighbours
+  for (let i = 0; i < 1000; i++) {
+    const nb = [];
+    for (let j = Math.max(0, i - 5); j <= Math.min(999, i + 5); j++) if (j !== i) nb.push(P[j]);
+    const mean = nb.reduce((a, b) => a + b) / nb.length;
+    assert.ok(Math.abs(P[i] / mean - 1) <= 0.15, `level ${i + 1} pressure ${P[i]} vs neighbours ${mean.toFixed(1)}`);
   }
-  for (let c = 1; c < 100; c++) assert.ok(chapterAvg[c] >= chapterAvg[c - 1] * 0.9, `chapter ${c + 1} dips`);
-  const ratio = chapterAvg[99] / chapterAvg[0];
-  assert.ok(ratio > 20 && ratio < 400, `late/early threat ratio ${ratio.toFixed(1)}`);
-  // per-decile growth factor stays gentle (no cliff)
+  // 20-level bucket means never decrease
+  const bucket = [];
+  for (let b = 0; b < 50; b++) bucket.push(P.slice(b * 20, b * 20 + 20).reduce((a, c) => a + c) / 20);
+  for (let b = 1; b < 50; b++) assert.ok(bucket[b] >= bucket[b - 1], `levels ${b * 20 + 1}–${b * 20 + 20} dip`);
+  const ratio = bucket[49] / bucket[0];
+  assert.ok(ratio > 50 && ratio < 1500, `late/early pressure ratio ${ratio.toFixed(1)}`);
+  // per-decile growth stays gentle (no cliff)
   for (let k = 1; k < 10; k++) {
-    const a = chapterAvg.slice((k - 1) * 10, k * 10).reduce((x, y) => x + y) / 10;
-    const b = chapterAvg.slice(k * 10, k * 10 + 10).reduce((x, y) => x + y) / 10;
-    assert.ok(b / a < 4.5 && b / a > 1, `decile ${k} growth ${(b / a).toFixed(2)}`); // 1–100 → 101–200 is ≈4× (tutorial is flat)
+    const a = P.slice((k - 1) * 100, k * 100).reduce((x, y) => x + y);
+    const b = P.slice(k * 100, k * 100 + 100).reduce((x, y) => x + y);
+    assert.ok(b / a < 4.5 && b / a > 1, `decile ${k} growth ${(b / a).toFixed(2)}`);
   }
 });
 

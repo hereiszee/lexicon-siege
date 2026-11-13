@@ -3,6 +3,7 @@
 //   aug — first verb/adjective concept listing it (defines it as an augment), or null
 //   pos — union of parts of speech from all concepts + POS_EXTRA
 
+import defenses from './defenses.js';
 import tools from './tools.js';
 import weapons from './weapons.js';
 import medicine from './medicine.js';
@@ -20,10 +21,11 @@ import things from './things.js';
 import verbs from './verbs.js';
 import adjectives from './adjectives.js';
 import { POS_EXTRA } from './pos-extra.js';
+import { SAYS } from './says.js';
 import { pluralize, verbForms } from '../morph.js';
 
 export const NOUN_CONCEPTS = [
-  ...tools, ...weapons, ...medicine, ...elements, ...nature, ...animals, ...materials, ...magic,
+  ...defenses, ...tools, ...weapons, ...medicine, ...elements, ...nature, ...animals, ...materials, ...magic,
   ...people, ...body, ...feelings, ...food, ...places, ...things,
 ];
 export const VERB_CONCEPTS = verbs;
@@ -48,7 +50,7 @@ for (const c of CONCEPTS) {
     if (inflected.has(w)) continue;
     let e = LEXICON.get(w);
     if (!e) {
-      e = { tpl: c, aug: null, pos: new Set(), mass: c.mass };
+      e = { tpl: c, aug: null, pos: new Set(), mass: c.mass, say: c.kind ? null : SAYS[w] || null };
       LEXICON.set(w, e);
     }
     for (const p of c.pos) e.pos.add(p);
