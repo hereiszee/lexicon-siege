@@ -60,7 +60,6 @@ async function runJobs(jobs, tuning) {
     w.on('exit', resolve);
     feed();
   })));
-  if (process.env.BALANCE_DUMP) (await import('node:fs')).writeFileSync(process.env.BALANCE_DUMP, JSON.stringify(out));
   return out;
 }
 

@@ -286,9 +286,8 @@ export function playLevel({
   let actions = 0;
   function buildTurn(maxActions = 6) {
     let redraws = 0;
-    // a disabled tower no healer reaches is dead weight: sell it and build again (casual players
-    // only notice between waves)
-    if (sk >= 0.3 || st.phase === 'build') {
+    // a disabled tower no healer reaches is dead weight: sell it and build again (casual players don't)
+    if (sk >= 0.3) {
       const healers = st.towers.filter((h) => !h.disabled && h.fx && h.fx.heal);
       for (const t of st.towers.slice()) {
         if (t.disabled && !healers.some((h) => (h.x - t.x) ** 2 + (h.y - t.y) ** 2 <= h.stats.range ** 2)) game.sellTower(t.id);

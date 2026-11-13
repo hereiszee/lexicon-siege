@@ -77,7 +77,8 @@ export function speedMulFor(d) {
 
 /**
  * Tower hp doesn't grow with the level, so tower damage mustn't grow with the budget: slinger shots
- * and boss stomps scale with hpMul, vandal bites are flat. Effective HP grows as hpMul^hpPow.
+ * and boss stomps scale with hpMul; vandal damage is flat but their numbers grow with the budget.
+ * Effective HP grows as hpMul^hpPow (addGroup and the boss solve for hpMul with the same power).
  */
 const hpPow = (type) => {
   const t = ENEMIES[type].traits;
