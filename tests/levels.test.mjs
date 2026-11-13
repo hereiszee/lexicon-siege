@@ -9,7 +9,7 @@ import { hashString, makeRng } from '../src/core/rng.js';
 import { makeLevel, LEVEL_COUNT as GEN_COUNT } from '../src/levels/levelgen.js';
 import { LEVEL_WORDS, CHAPTERS } from '../src/levels/levelWords.js';
 import { pathProblem, fallbackPath, growPath, PATH_STYLES } from '../src/levels/mapgen.js';
-import { levelThreat, ENEMY_UNLOCK, hpMulFor, TUNING } from '../src/levels/waves.js';
+import { levelThreat, ENEMY_UNLOCK, hpMulFor, TUNING, ruleHpFor } from '../src/levels/waves.js';
 import { checkWordRules, themeBonus, RULE_TYPES } from '../src/levels/rules.js';
 
 // ---- collaborator: real words module if available, else a stub ----------------------------
@@ -311,6 +311,15 @@ test('threat per time-on-path is smooth and monotone across levels', () => {
     const b = P.slice(k * 100, k * 100 + 100).reduce((x, y) => x + y);
     assert.ok(b / a < 4.5 && b / a > 1, `decile ${k} growth ${(b / a).toFixed(2)}`);
   }
+});
+
+test('restrictive rules: no "must contain" with a length cap, and they get a pressure credit', () => {
+  for (const l of LEVELS) {
+    const t = l.rules.map((r) => r.type);
+    assert.ok(!(t.includes('mustContain') && t.includes('maxLength')), `${l.id}: mustContain + maxLength`);
+  }
+  assert.ok(ruleHpFor([{ type: 'mustContain', letter: 'e' }]) < 1 && ruleHpFor([{ type: 'maxLength', n: 5 }]) < 1);
+  assert.equal(ruleHpFor([{ type: 'maxLength', n: 7 }, { type: 'banLetter', letter: 'q' }]), 1);
 });
 
 test('rules are introduced gradually', () => {

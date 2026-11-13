@@ -380,6 +380,7 @@ then mixed in; per-round cash.
   `game.buildReason(cx, cy, archetype)` gives the refusal text.
 - `tower.stats` adds `minRange`, `pull`, `orbs`; orb k is at angle `tower.orbAngle + 2πk/orbs`,
   radius `stats.range` (advances only during waves). `enemy.blocked` is true while biting.
+- Vortex pull fatigue: each walker can be pulled for at most 12 s in total (`enemy.pullT`, across all vortexes); after that vortexes still damage it but no longer pull, so no wave can stall.
 - Projectile kinds: `'mortar'` has `sx, sy, tx, ty, age, flight`; `'sling'` is an enemy shot at a tower.
 - Letter reward options are `{letter, bonus /*kind id*/, tier, text}`. `rewardTaken.id` is the relic id or the letter.
 - Relics apply to existing towers immediately; letter bonuses only to towers built afterwards,

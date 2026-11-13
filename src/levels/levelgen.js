@@ -3,7 +3,7 @@
 import { DEFAULTS, ELEMENTS } from '../core/constants.js';
 import { hashString, makeRng } from '../core/rng.js';
 import { generateMap } from './mapgen.js';
-import { generateWaves, newEnemiesAt } from './waves.js';
+import { generateWaves, newEnemiesAt, waveCountFor } from './waves.js';
 import { generateRules, makeLetterWeights, makeBonus, enemyElementFor } from './rules.js';
 
 export const LEVEL_COUNT = 1000;
@@ -49,9 +49,9 @@ export function makeLevel(word, difficulty, towerFor, meta = {}) {
   const twoPaths = mapRng.chance(twoPathChance);
   const { paths, blocked, style } = generateMap(mapRng, { cols: DEFAULTS.cols, rows: DEFAULTS.rows, difficulty: d, twoPaths });
 
-  const waves = generateWaves(sub('waves'), d, { boss, pathLengths: paths.map((p) => p.length - 1) });
   const bonus = makeBonus(spec, spec.element, d);
-  const rules = generateRules(sub('rules'), d, { word: w, bonusElement: bonus.element, waveCount: waves.length });
+  const rules = generateRules(sub('rules'), d, { word: w, bonusElement: bonus.element, waveCount: waveCountFor(d) });
+  const waves = generateWaves(sub('waves'), d, { boss, pathLengths: paths.map((p) => p.length - 1), rules });
 
   const lives = DEFAULTS.lives + Math.floor(d / 70); // +1 every 70 levels (smooth, no 250-level steps)
   // late waves are tough from the start: the opening ink grows with difficulty (100 → 500);

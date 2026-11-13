@@ -17,14 +17,16 @@ import { ENEMIES } from '../core/constants.js';
 
 /** Balance knobs — tune these in the balance pass. */
 export const TUNING = {
-  baseLevelHp: 2500,    // whole-level HP budget at difficulty 1 on a reference path
+  baseLevelHp: 2700,    // (2500 before the rule/two-path credits; raised to keep the pooled curve) whole-level HP budget at difficulty 1 on a reference path
   hpRate0: 0.05,        // growth G(d) = exp(hpExp · asinh(hpRate0·(d−1)/hpExp)): +5%/level at first,
   hpExp: 1.46,          //   ≈ d^1.46 later (≈17× at 100, ≈175× at 500, ≈480× at 1000)
   perWave: 0.32,        // within-level shape: wave w gets a share ∝ (1 + perWave·w) · ramp(w)
   firstWaveHp: 0.15,    // ramp(w) rises linearly from this (wave 1) to 1 (last wave); also scales hpMul
   refPathLen: 39,       // path length (cells travelled) the budget is quoted for; ≈ the average path
   refSpeed: 1.2,        // enemy speed the budget is quoted for (a grunt)
-  twoPathHp: 0.55,      // pressure multiplier on two-path levels (defences are split across both)
+  twoPathHp: 0.5,       // pressure multiplier on two-path levels (defences are split across both; 0.55 left them ~10 pts low)
+  mustContainHp: 0.7,   // restrictive rules leave fewer usable words: pressure multiplier per "must contain X"
+  maxLength5Hp: 0.8,    //   … and per "at most 5 letters" (without the credit both sat ~10–18 pts below their neighbours)
   hpShare: 0.85,        // fraction of the per-wave budget growth (in log space) that goes into hpMul;
                         // the rest adds enemies, and with them bounty ink
   minWaves: 6,          // waves → minWaves + extraWaves·((d − 1)/999)^waveExp  (6 → 25)
@@ -65,6 +67,16 @@ export function waveCountFor(d) {
 
 /** Long-range growth of the whole-level budget (1 at d=1). */
 export const growthFor = (d) => Math.exp(TUNING.hpExp * Math.asinh(TUNING.hpRate0 * (Math.max(1, d) - 1) / TUNING.hpExp));
+
+/** Pressure credit for a level's word rules (1 = none); generateWaves applies it, levelThreat counts it back. */
+export function ruleHpFor(rules = []) {
+  let m = 1;
+  for (const r of rules) {
+    if (r.type === 'mustContain') m *= TUNING.mustContainHp;
+    else if (r.type === 'maxLength' && r.n <= 5) m *= TUNING.maxLength5Hp;
+  }
+  return m;
+}
 
 /** Enemy hp multiplier of a level's last wave: follows the per-wave budget growth. */
 export function hpMulFor(d) {
@@ -121,9 +133,9 @@ function typeWeights(d, unlocked) {
  * Build the wave list.
  * @param rng  makeRng instance
  * @param d    difficulty 1..1000
- * @param opts { boss:boolean, pathLengths:number[] (cells travelled per path) }
+ * @param opts { boss:boolean, pathLengths:number[] (cells travelled per path), rules: the level's rules }
  */
-export function generateWaves(rng, d, { boss = false, pathLengths = [TUNING.refPathLen] } = {}) {
+export function generateWaves(rng, d, { boss = false, pathLengths = [TUNING.refPathLen], rules = [] } = {}) {
   const pathCount = pathLengths.length;
   const count = waveCountFor(d);
   const pathHp = pathCount > 1 ? TUNING.twoPathHp : 1;
@@ -141,7 +153,7 @@ export function generateWaves(rng, d, { boss = false, pathLengths = [TUNING.refP
   let shapeSum = 0;
   for (let w = 0; w < count; w++) shapeSum += shapeOf(w);
   // reference pressure of the whole level: HP on a reference path at reference speed
-  const levelBudget = TUNING.baseLevelHp * growthFor(d);
+  const levelBudget = TUNING.baseLevelHp * growthFor(d) * ruleHpFor(rules);
   const waves = [];
 
   for (let w = 0; w < count; w++) {
@@ -230,7 +242,8 @@ export function levelThreat(level) {
   const byEnemy = {};
   let enemies = 0;
   // two-path levels get less hp because the defence is split; count that back in as threat
-  const pathMul = (level.paths?.length ?? 1) > 1 ? 1 / TUNING.twoPathHp : 1;
+  // (and restrictive rules less: count that back in too)
+  const pathMul = ((level.paths?.length ?? 1) > 1 ? 1 / TUNING.twoPathHp : 1) / ruleHpFor(level.rules);
   for (const wave of level.waves) {
     let hp = 0;
     let pr = 0;

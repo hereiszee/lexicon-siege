@@ -24,6 +24,7 @@ const SPECS = {
   shell: { archetype: 'mortar', stats: { damage: 10, rate: 1, range: 5, minRange: 2, splash: 1 } },
   swirl: { archetype: 'vortex', stats: { damage: 2, range: 3, pull: 0.6, rate: 1 } },
   drift: { archetype: 'vortex', stats: { damage: 0, range: 3, pull: 0.3, rate: 1 } },
+  hole: { archetype: 'vortex', stats: { damage: 0, range: 3, pull: 0.9, rate: 1 } },
   drum: { archetype: 'pulse', stats: { damage: 5, rate: 1, range: 2 }, effects: [{ type: 'slow', factor: 0.5, duration: 3 }] },
   moon: { archetype: 'orbit', stats: { damage: 1, range: 1, orbs: 1 } },
   twin: { archetype: 'orbit', stats: { damage: 1, range: 1, orbs: 2 } },
@@ -197,6 +198,19 @@ test('vortex: walkers in range drift back at pull c/s (bosses 25%), DPS, stronge
   s2.game.update(1);
   assert.equal(e.progress, 0, 'never past spawn');
   assert.ok(near(e2.progress, 1.5 + 1 - 0.6 * 59 / 60, 1e-6), 'two vortexes do not stack');
+});
+
+test('vortex: pull fatigue - slowed walkers out-pulled at the range edge still get through (no endless wave)', () => {
+  const waves = [{ groups: [{ enemy: 'healer', count: 25, interval: 0.5, delay: 0, path: 0, hpMul: 1000 }] }];
+  const { game, place } = sb({ lives: 100, waves });
+  place('hole', 8, 3); // pull 0.9 c/s
+  place('drum', 6, 3); // slows healers to 0.5 c/s right where they enter the vortex
+  game.startWave();
+  game.update(20);
+  assert.ok(game.state.enemies.some((e) => !e.dead && e.progress > 4 && e.progress < 5.5), 'healers are held at the range edge');
+  for (let t = 0; t < 180 && game.state.phase === 'wave'; t++) game.update(1);
+  assert.equal(game.state.phase, 'won', 'the wave finishes');
+  assert.equal(game.state.leaked, 25);
 });
 
 // ---------------------------------------------------------------- pulse

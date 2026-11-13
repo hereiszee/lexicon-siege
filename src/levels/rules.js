@@ -53,12 +53,13 @@ export function generateRules(rng, d, { word, bonusElement, waveCount }) {
         break;
       }
       case 'maxLength': {
-        if (rules.some((r) => r.type === 'minLength')) break;
+        if (must || rules.some((r) => r.type === 'minLength')) break;
         const len = d > 200 ? rng.int(5, 7) : rng.int(6, 8);
         rule = { type, n: len, text: `Words may be at most ${len} letters long` };
         break;
       }
       case 'mustContain': {
+        if (rules.some((r) => r.type === 'maxLength')) break; // short words that must hold X: too few to play
         const opts = COMMON_LETTERS.filter((l) => !banned.has(l));
         must = rng.pick(opts);
         rule = { type, letter: must, text: `Every word must contain ${must.toUpperCase()}` };
