@@ -23,6 +23,7 @@ const SPECS = {
   trap: { archetype: 'trap', stats: { damage: 10, rate: 1 } },
   shell: { archetype: 'mortar', stats: { damage: 10, rate: 1, range: 5, minRange: 2, splash: 1 } },
   swirl: { archetype: 'vortex', stats: { damage: 2, range: 3, pull: 0.6, rate: 1 } },
+  whirl: { archetype: 'vortex', stats: { damage: 0, range: 3, pull: 0.6, rate: 1 } },
   drift: { archetype: 'vortex', stats: { damage: 0, range: 3, pull: 0.3, rate: 1 } },
   hole: { archetype: 'vortex', stats: { damage: 0, range: 3, pull: 0.9, rate: 1 } },
   drum: { archetype: 'pulse', stats: { damage: 5, rate: 1, range: 2 }, effects: [{ type: 'slow', factor: 0.5, duration: 3 }] },
@@ -211,6 +212,21 @@ test('vortex: pull fatigue - slowed walkers out-pulled at the range edge still g
   for (let t = 0; t < 180 && game.state.phase === 'wave'; t++) game.update(1);
   assert.equal(game.state.phase, 'won', 'the wave finishes');
   assert.equal(game.state.leaked, 25);
+});
+
+test('vortex: pull fatigue is per vortex - a second vortex further along still delays a tired walker', () => {
+  const exitTime = (towers) => {
+    const { game, place, enemy } = sb({ lives: 100 });
+    for (const [w, x] of towers) place(w, x, 3);
+    const e = enemy('healer', 0, { speed: null, hpMul: 1000 });
+    let t = 0;
+    while (!e.dead && t < 120) { game.update(S); t += S; }
+    return t;
+  };
+  const one = exitTime([['swirl', 4]]); // healer is pulled past the 12 s allowance here
+  const two = exitTime([['swirl', 4], ['whirl', 11]]);
+  assert.ok(two > one + 5, `one ${one.toFixed(1)} s, two ${two.toFixed(1)} s`);
+  assert.ok(two < 60, 'still gets through');
 });
 
 // ---------------------------------------------------------------- pulse

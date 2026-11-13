@@ -17,15 +17,17 @@ import { ENEMIES } from '../core/constants.js';
 
 /** Balance knobs — tune these in the balance pass. */
 export const TUNING = {
-  baseLevelHp: 2700,    // (2500 before the rule/two-path credits; raised to keep the pooled curve) whole-level HP budget at difficulty 1 on a reference path
+  baseLevelHp: 2620,    // (2500 before the rule/two-path credits, 2700 with count-based two-path credit) whole-level HP budget at difficulty 1 on a reference path
   hpRate0: 0.05,        // growth G(d) = exp(hpExp · asinh(hpRate0·(d−1)/hpExp)): +5%/level at first,
   hpExp: 1.46,          //   ≈ d^1.46 later (≈17× at 100, ≈175× at 500, ≈480× at 1000)
   perWave: 0.32,        // within-level shape: wave w gets a share ∝ (1 + perWave·w) · ramp(w)
   firstWaveHp: 0.15,    // ramp(w) rises linearly from this (wave 1) to 1 (last wave); also scales hpMul
   refPathLen: 39,       // path length (cells travelled) the budget is quoted for; ≈ the average path
+  pathLenExp: 0.5,      // hp grows as (path length)^pathLenExp: linear left 48+-cell paths ~10–23 pts below their neighbours
   refSpeed: 1.2,        // enemy speed the budget is quoted for (a grunt)
-  twoPathHp: 0.5,       // pressure multiplier on two-path levels (defences are split across both; 0.55 left them ~10 pts low)
-  mustContainHp: 0.7,   // restrictive rules leave fewer usable words: pressure multiplier per "must contain X"
+  twoPathHp: 0.7,       // pressure multiplier on two-path levels, taken off enemy hp (defences are split across both lanes)
+  mustContainHp: 0.8,   // restrictive rules leave fewer usable words: pressure multiplier per "must contain X" (0.7 sat ~8 pts high)
+  towerLimitHp: 0.95,   //   … per tower limit
   maxLength5Hp: 0.8,    //   … and per "at most 5 letters" (without the credit both sat ~10–18 pts below their neighbours)
   hpShare: 0.85,        // fraction of the per-wave budget growth (in log space) that goes into hpMul;
                         // the rest adds enemies, and with them bounty ink
@@ -59,6 +61,9 @@ const TRAIT_FACTOR = { stealth: 1.25, healer: 1.3, vandal: 1.6, slinger: 1.6, fl
 
 const round2 = (v) => Math.round(v * 100) / 100;
 
+/** Path length as the budget sees it: long paths are harder to cover than their length says. */
+const effLen = (len) => TUNING.refPathLen * (Math.max(1, len) / TUNING.refPathLen) ** TUNING.pathLenExp;
+
 const wavesExact = (d) => TUNING.minWaves + TUNING.extraWaves * Math.pow((Math.max(1, d) - 1) / 999, TUNING.waveExp);
 
 export function waveCountFor(d) {
@@ -73,6 +78,7 @@ export function ruleHpFor(rules = []) {
   let m = 1;
   for (const r of rules) {
     if (r.type === 'mustContain') m *= TUNING.mustContainHp;
+    else if (r.type === 'towerLimit') m *= TUNING.towerLimitHp;
     else if (r.type === 'maxLength' && r.n <= 5) m *= TUNING.maxLength5Hp;
   }
   return m;
@@ -147,7 +153,7 @@ export function generateWaves(rng, d, { boss = false, pathLengths = [TUNING.refP
   const intro = newEnemiesAt(d).filter((t) => t !== 'grunt')[0];
   let pathCursor = rng.int(0, pathCount - 1);
   // HP that `pressure` buys for an enemy of `type` moving at `speed` cells/s (before baseSpeed) on path p
-  const hpFor = (pressure, p, speed) => pressure * pathHp * (pathLengths[p] / TUNING.refPathLen) * (TUNING.refSpeed / speed);
+  const hpFor = (pressure, p, speed) => pressure * pathHp * effLen(pathLengths[p]) / TUNING.refPathLen * (TUNING.refSpeed / speed);
   const rampOf = (w) => TUNING.firstWaveHp + (1 - TUNING.firstWaveHp) * w / Math.max(1, count - 1);
   const shapeOf = (w) => (1 + TUNING.perWave * w) * rampOf(w);
   let shapeSum = 0;
@@ -158,7 +164,9 @@ export function generateWaves(rng, d, { boss = false, pathLengths = [TUNING.refP
 
   for (let w = 0; w < count; w++) {
     const last = w === count - 1;
-    const hpMul = round2(Math.max(1, levelHpMul * rampOf(w)));
+    // the two-path credit comes off each enemy's hp, not the head count: fewer enemies would also mean
+    // half the bounty ink (two-path levels without a rule credit sat ~13 pts below their neighbours)
+    const hpMul = round2(Math.max(1, levelHpMul * rampOf(w) * pathHp));
     let budget = levelBudget * shapeOf(w) / shapeSum;
     const groups = [];
     let delay = 0;
@@ -249,7 +257,7 @@ export function levelThreat(level) {
     let pr = 0;
     for (const g of wave.groups) {
       const h = g.count * effectiveHp(g.enemy, g.hpMul);
-      const len = Math.max(1, (level.paths?.[g.path]?.length ?? TUNING.refPathLen + 1) - 1);
+      const len = effLen((level.paths?.[g.path]?.length ?? TUNING.refPathLen + 1) - 1);
       hp += h;
       pr += h * (ENEMIES[g.enemy]?.speed ?? 1) * (g.speedMul ?? 1) / len;
       byEnemy[g.enemy] = (byEnemy[g.enemy] || 0) + g.count;

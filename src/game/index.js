@@ -37,7 +37,7 @@ export const RULES = {
   trapTrigger: 0.5, trapRadius: 0.6,
   mortarFlight: 1.2,
   bossPull: 0.25,
-  pullMax: 12,              // a walker can be pulled for 12 s in total, then vortexes ignore it (no endless stalls)
+  pullMax: 12,              // each vortex can pull a given walker for 12 s, then ignores it (finite towers, so no endless stalls)
   orbitLap: 1.5, orbHit: 0.35, orbCooldownSteps: 30, // 0.5 s
   slingInterval: 2, slingRange: 2.5, slingDamage: 6, slingSpeed: 6,
   stompInterval: 4, stompRadius: 1.5, stompDamage: 20,
@@ -661,7 +661,7 @@ export function createGame({
       slowFactor: 1, abAmount: 0, dead: false,
       // v2
       bite: b.bite || 0, slinger: tr.includes('slinger'), stomp: tr.includes('stomp'),
-      blocked: false, blockedT: 0, thornT: 0, pull: 0, pullT: 0,
+      blocked: false, blockedT: 0, thornT: 0, pull: 0, pullBy: null, pullT: {},
       slingT: RULES.slingInterval, stompT: RULES.stompInterval,
     };
     placeOnPath(paths[pi], e);
@@ -831,7 +831,7 @@ export function createGame({
       const fwd = e.blocked || held ? 0 : e.speed * (st.slow > 0 ? e.slowFactor : 1);
       if (fwd !== 0 || e.pull !== 0) {
         e.progress += (fwd - e.pull) * dt;
-        if (e.pull) e.pullT += dt;
+        if (e.pull) e.pullT[e.pullBy] = (e.pullT[e.pullBy] || 0) + dt;
         if (e.progress < 0) e.progress = 0;
       }
       e.pull = 0;
@@ -1099,8 +1099,8 @@ export function createGame({
       const dx = e.x - t.x, dy = e.y - t.y;
       if (dx * dx + dy * dy > r2) continue;
       any = true;
-      const pull = e.pullT >= RULES.pullMax ? 0 : (s.pull || 0) * (e.boss ? RULES.bossPull : 1);
-      if (pull > e.pull) e.pull = pull; // strongest vortex wins, no stacking
+      const pull = (e.pullT[t.id] || 0) >= RULES.pullMax ? 0 : (s.pull || 0) * (e.boss ? RULES.bossPull : 1);
+      if (pull > e.pull) { e.pull = pull; e.pullBy = t.id; } // strongest vortex wins, no stacking
       const em = elementMul(t.element, e.element);
       if (s.damage > 0) damageRaw(e, Math.max(1, s.damage * em * relicDmg(t, e) - effArmor(e)) * dt, t);
       if (pulse && !e.dead && t.fx.onHit) applyOnHit(t, e, em);

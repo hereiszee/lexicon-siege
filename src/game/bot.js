@@ -150,17 +150,44 @@ export function playLevel({
   // path cells weighted toward the base (later cells matter more)
   const pathPts = [];
   const pathFrac = new Map(); // cell → how far along its path (0..1)
-  for (const p of level.paths || []) {
+  const nPaths = Math.max(1, (level.paths || []).length);
+  const pathW = new Array(nPaths).fill(0); // summed cell weight per path
+  (level.paths || []).forEach((p, pi) => {
     p.forEach(([cx, cy], i) => {
       const f = i / Math.max(1, p.length - 1);
-      pathPts.push({ x: cx + 0.5, y: cy + 0.5, w: 1 + 0.5 * f });
+      pathPts.push({ x: cx + 0.5, y: cy + 0.5, w: 1 + 0.5 * f, p: pi });
+      pathW[pi] += 1 + 0.5 * f;
       pathFrac.set(cy * cols + cx, Math.max(f, pathFrac.get(cy * cols + cx) || 0));
     });
+  });
+  // Several paths: weight each by the threat on it and by how little of it the towers already
+  // cover (a strong defence on one lane is wasted while the other leaks). One path: pw = [1].
+  const share = new Array(nPaths).fill(0);
+  for (const wv of level.waves || []) for (const g of wv.groups) if (share[g.path ?? 0] !== undefined) share[g.path ?? 0] += g.count * (ENEMIES[g.enemy]?.hp || 1) * (g.hpMul ?? 1);
+  const shareSum = share.reduce((a, b) => a + b, 0) || 1;
+  const wTot = pathW.reduce((a, b) => a + b, 0);
+  let pw = new Array(nPaths).fill(1);
+  const rawCoverage = (cx, cy, r, out) => {
+    const x = cx + 0.5, y = cy + 0.5, r2 = r * r;
+    for (const p of pathPts) { const dx = p.x - x, dy = p.y - y; if (dx * dx + dy * dy <= r2) out[p.p] += p.w; }
+    return out;
+  };
+  function updatePathWeights() {
+    if (nPaths < 2) return;
+    const cov = new Array(nPaths).fill(0); // summed covered fraction per path by attack towers
+    for (const t of st.towers) {
+      if (t.disabled || !ATTACK.has(t.archetype) || PATH_ARCHETYPES.includes(t.archetype)) continue;
+      rawCoverage(Math.floor(t.x), Math.floor(t.y), t.stats.range || 2, cov);
+    }
+    const c = cov.map((v, i) => v / Math.max(1, pathW[i]));
+    const s = share.map((v) => v / shareSum);
+    const cMean = c.reduce((a, v, i) => a + v * s[i], 0);
+    pw = pathW.map((w, i) => s[i] * (wTot / Math.max(1, w)) * ((1 + cMean) / (1 + c[i])) ** 2);
   }
   const coverage = (cx, cy, r) => {
     const x = cx + 0.5, y = cy + 0.5, r2 = r * r;
     let s = 0;
-    for (const p of pathPts) { const dx = p.x - x, dy = p.y - y; if (dx * dx + dy * dy <= r2) s += p.w; }
+    for (const p of pathPts) { const dx = p.x - x, dy = p.y - y; if (dx * dx + dy * dy <= r2) s += p.w * pw[p.p]; }
     return s;
   };
 
@@ -201,7 +228,7 @@ export function playLevel({
   // Spot quality: path coverage of the best free cell for this range relative to an empty board.
   // Experts see that cheap towers squeezed into poor spots are worth less than an augment on a
   // well-placed tower.
-  const emptyBest = new Map();
+  let emptyBest = new Map();
   let freeBest = new Map();
   function spotQuality(range) {
     const k = Math.round(range * 10);
@@ -284,8 +311,14 @@ export function playLevel({
 
   const noCell = new Set(); // tower words that found no legal cell (e.g. a wall with the path full)
   let actions = 0;
+  function refreshWeights() {
+    updatePathWeights();
+    emptyBest = new Map();
+    freeBest = new Map();
+  }
   function buildTurn(maxActions = 6) {
     let redraws = 0;
+    if (nPaths > 1) refreshWeights();
     // a disabled tower no healer reaches is dead weight: sell it and build again (casual players don't)
     if (sk >= 0.3) {
       const healers = st.towers.filter((h) => !h.disabled && h.fx && h.fx.heal);
@@ -337,7 +370,7 @@ export function playLevel({
       const cell = bestCell(bestT.spec);
       if (!cell) { noCell.add(bestT.word); n--; if (noCell.size > 50) return; continue; }
       if (!game.placeTower(bestT.word, cell[0], cell[1]).ok) return;
-      freeBest = new Map();
+      refreshWeights();
       actions++;
     }
   }
